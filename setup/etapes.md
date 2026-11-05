@@ -12,7 +12,7 @@ HUB="$HOME/workspace/projects/active/ultron-hub"   # code installé
 ETAT="$HOME/.config/assistant-kit"                 # sa partie : réponses et gabarits remplis
 R="$ETAT/gabarits-remplis"
 CLI="$HUB/.venv/bin/ultron-hub"
-PY="$(command -v python3.12 || command -v python3)"
+PY="$(for p in python3.14 python3.13 python3.12 python3; do q="$(command -v "$p")" && "$q" -c 'import sys; sys.exit(sys.version_info < (3, 12))' 2>/dev/null && { echo "$q"; break; }; done; true)"   # premier Python 3.12+ trouvé
 ```
 
 ## 0. Questionnaire
@@ -23,8 +23,19 @@ Contrôle : `"$PY" -c 'import json,sys; a=json.load(open(sys.argv[1])); assert a
 Python 3.12 ou plus, `git`, `tmux`, `claude` (déjà connecté : c'est lui qui lit ce fichier).
 - Linux (Debian, Ubuntu) : il manque quelque chose = lui donner `! sudo apt install python3 python3-venv git tmux`.
   Python trop vieux : `! sudo apt install python3.12 python3.12-venv`.
-- Mac : `command -v brew` vide = étape manuelle M0 (installer Homebrew depuis brew.sh, la commande affichée sur le site).
-  Puis `! brew install python git tmux` (la formule `python` de Homebrew est un Python 3.12 ou plus récent).
+- Mac : regarder d'abord le processeur, `uname -m`.
+  - `arm64` (puce Apple M1, M2…) : `command -v brew` vide = étape manuelle M0 (installer Homebrew depuis brew.sh, la
+    commande affichée sur le site). Puis `! brew install python git tmux` (la formule `python` est un Python 3.12 ou plus).
+  - `x86_64` (Mac Intel) : PAS de Homebrew (Intel en « Tier 3 » depuis septembre 2026 : sans support, beaucoup d'outils se
+    compilent sur place, lent et fragile ; arrêt prévu en 2027). Si `brew` est déjà là ET que `brew install tmux` marche, le
+    garder ; sinon, dans l'ordre, une chose à la fois :
+    1. `git` absent = `! xcode-select --install` (outils de ligne de commande d'Apple ; MacPorts en a besoin aussi).
+    2. Python absent ou trop vieux = étape manuelle M0-Intel-a : sur python.org/downloads/macos, le dernier « macOS 64-bit
+       universal2 installer » (.pkg), double-clic, puis « Install Certificates.command » dans la fenêtre Python ouverte.
+       Rouvrir le terminal (le PATH change), relancer la détection de `PY` ci-dessus.
+    3. tmux absent = étape manuelle M0-Intel-b : MacPorts depuis macports.org/install.php (le .pkg de SA version de
+       macOS : `sw_vers -productVersion`), rouvrir le terminal, puis `! sudo port install tmux` (quelques minutes).
+  - `/usr/bin/python3` d'Apple est trop vieux (3.9) : la détection de `PY` le saute, c'est voulu.
 
 Contrôle : `"$PY" -c 'import sys; assert sys.version_info >= (3, 12), sys.version' && command -v git tmux claude`
 
@@ -46,8 +57,9 @@ cd "$HUB" && .venv/bin/python -m pytest -q --continue-on-collection-errors
 ```
 - `config/settings.yaml` et `config/dashboard.yaml` ne sont pas dans le code exporté : ils viennent des gabarits remplis.
 - `remplir.py` passe aussi sur le code : l'export y a mis `{{HOME}}` et `{{MACHINE}}` à la place des valeurs d'origine.
-- Mac : la couche plateforme (`common/plateforme.py`) remplace systemd par launchd et lance les tests sans bwrap. Des tests
-  écrits pour Linux (bwrap, `/proc`, systemd) peuvent encore échouer : noter le nombre et les noms, ne pas bloquer dessus.
+- Mac : la couche plateforme (`common/plateforme.py`) remplace systemd par launchd et lance les tests sans bwrap. Seule
+  exception à la règle ci-dessous : un FAILED dont le nom ou l'erreur parle de bwrap, `/proc`, systemd ou `systemctl` est
+  attendu sur Mac. Le noter (nombre et noms, pour le rapport à la fin) et continuer. Tout autre FAILED ou ERROR = KO.
 
 - Les tests qui dépendent de fichiers hors kit (`hermes_plugin`, `deploy/user`, unités d'autres services) sont écartés ou
   ignorés par l'export : `pytest` doit passer sans erreur. Un FAILED ou un ERROR est un KO.
@@ -170,6 +182,7 @@ Tout doit être OK ou SAUTÉ (avec sa raison). Puis :
 
 ## À faire à la main par lui (expliqué pas à pas, une chose à la fois)
 - M0 (Mac) : installer Homebrew depuis brew.sh.
+- M0-Intel (Mac Intel) : Python depuis python.org, puis MacPorts et `! sudo port install tmux` (étape 1).
 - M1 Tailscale : créer le compte, installer l'app sur l'ordinateur et le téléphone, se connecter des deux côtés, activer
   HTTPS dans la console Tailscale (DNS, HTTPS Certificates).
 - M2 Claude Code : connecté avec son compte (déjà fait s'il lit ceci).

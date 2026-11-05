@@ -19,7 +19,7 @@ check() { # check <label> <hint> <command...>
     if "$@" >/dev/null 2>&1; then ok "$label"; else ko "$label" "$hint"; fi
 }
 
-PY="$(command -v python3.12 || command -v python3 || true)"
+PY="$(for p in python3.14 python3.13 python3.12 python3; do q="$(command -v "$p")" && "$q" -c 'import sys; sys.exit(sys.version_info < (3, 12))' 2>/dev/null && { echo "$q"; break; }; done; true)"
 py_ok() { [ -n "$PY" ] && "$PY" -c 'import sys; sys.exit(sys.version_info < (3, 12))'; }
 check "python 3.12 ou plus" "étape 1" py_ok
 for tool in git tmux claude; do check "commande $tool" "étape 1" command -v "$tool"; done
