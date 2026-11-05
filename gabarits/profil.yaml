@@ -1,0 +1,4 @@
+# Profil de {{PRENOM}} : vide au départ, complété par propositions validées par {{PRENOM}}.
+prenom: "{{PRENOM}}"
+langue: "{{LANGUE}}"
+faits: []

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0c0c0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ultron">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<title>Ultron</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header id="top"><strong>ultron<i class="curseur" aria-hidden="true"></i></strong><span id="maj" aria-live="polite">…</span>
+  <!-- todo #466: Moi (chantiers, every task, merges, tidy-up, accounts, health) sits behind this icon, out of the tab bar -->
+  <button type="button" id="ouvrir-moi" aria-label="Moi : chantiers, tâches, comptes, santé" aria-pressed="false"><b aria-hidden="true">@</b></button></header>
+<div id="ptr" aria-hidden="true">↓</div>
+<main id="page">
+  <!-- #238 : zone « tirer pour rafraîchir » -->
+  <div id="erreur" class="erreur" role="alert" hidden></div>
+  <!-- todo #466: À toi = the ONE queue of decisions (merges, delivered todos, questions, waiting sessions, accounts to reconnect,
+       profile facts, proposed habits, Sunday reports), open by default; the tab keeps its #270 id "briefing" -->
+  <div class="screen" id="tab-briefing" role="tabpanel">
+    <h1>À toi</h1>
+    <section class="card" id="atoi"><h2>décisions</h2><div class="body">Chargement…</div></section>
+  </div>
+  <!-- todo #466: En cours = state band, live sessions (state first), done today, then ONE « Demander à Ultron » field; id "travail" kept -->
+  <div class="screen" id="tab-travail" role="tabpanel" hidden>
+    <button type="button" class="etat" id="etat" aria-label="Santé détaillée"><span>Chargement…</span></button>
+    <section class="card" id="sessions"><h2>sessions</h2><div class="body">Chargement…</div></section>
+    <section class="card" id="fait"><h2>fait aujourd'hui</h2><div class="body">Chargement…</div></section>
+    <section class="card" id="travail-conseil"><h2>session conseillée</h2><div class="body">Chargement…</div></section>
+    <section class="card" id="demander"><h2>demander à ultron</h2><div class="body">Chargement…</div>
+      <!-- todo #407: 📎 joindre (same route, same sheet; the analysis comes back in the Fil journal) -->
+      <button type="button" class="texte" id="fil-joindre">📎 Joindre un fichier ou un lien</button></section>
+  </div>
+  <!-- Fil (todo #292): the 📜 fil of notifications; todo #466: a tap always opens the message -->
+  <div class="screen" id="tab-fil" role="tabpanel" hidden>
+    <h1>Fil</h1>
+    <!-- todo #409: Nouveau (unread cards) above Plus tôt (the read journal by day) -->
+    <section class="card" id="fil-nouveau" hidden><h2>Nouveau</h2>
+      <!-- todo #355: « Tout marquer lu » (catalogue action notifs-vu) as an open-envelope icon, shown only while something is unread -->
+      <button type="button" class="icone-vu" id="fil-vu" title="Tout marquer lu" aria-label="Tout marquer lu" hidden>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l9-6 9 6v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M3 10l9 6 9-6"/></svg>
+      </button>
+      <div class="body"></div></section>
+    <section class="card" id="fil-liste"><h2>Plus tôt</h2>
+      <div class="body">Chargement…</div></section>
+  </div>
+  <!-- Moi (todo #270; todo #466: behind the top-right icon): cap, chantiers, every task (merges, tidy-up, tidy into chantiers),
+       accounts, health, notifications. Decisions (Sunday reports, habits, profile) moved to À toi. -->
+  <div class="screen" id="tab-moi" role="tabpanel" hidden>
+    <h1>Moi</h1>
+    <section class="card" id="cap"><h2>Ton cap</h2><div class="body"><button type="button" class="list" id="plus-focus"><i data-i="compass"></i>Focus de la semaine</button><button type="button" class="list" id="plus-cap"><i data-i="eye"></i>Revue de cap</button><button type="button" class="list" id="plus-profil"><i data-i="user"></i>Ce que je sais de toi</button></div></section>
+    <section class="card" id="chantiers"><h2>chantiers</h2><div class="body">Chargement…</div></section>
+    <section class="card" id="toutes"><h2>Toutes les tâches</h2><div class="body">Chargement…</div></section>
+    <section class="card" id="comptes"><h2>Quota et comptes</h2><div class="body">Chargement…</div></section>
+    <section class="card" id="sante"><h2>Santé du serveur</h2><div class="body">Chargement…</div></section>
+    <section class="card" id="notifs" hidden><h2>Notifications</h2><div class="body"></div></section>
+  </div>
+</main>
+<noscript><p class="err">JavaScript est nécessaire pour afficher la page.</p></noscript>
+<footer id="dock">
+  <!-- #238 : toasts -->
+  <div id="toasts" aria-live="polite"></div>
+  <nav id="tabs" role="tablist" aria-label="Onglets">
+    <!-- todo #466: three tabs, ONE badge (À toi) -->
+    <button type="button" role="tab" data-tab="briefing" aria-selected="true"><b aria-hidden="true">!</b><span>à toi</span><em class="badge" hidden></em></button>
+    <button type="button" role="tab" data-tab="travail" aria-selected="false"><b aria-hidden="true">✻</b><span>en cours</span></button>
+    <button type="button" role="tab" data-tab="fil" aria-selected="false"><b aria-hidden="true">◎</b><span>fil</span></button>
+  </nav>
+</footer>
+<section id="analyse" class="overlay" aria-label="Analyser"><div class="bar-top"><button id="analyse-retour" type="button">‹ Retour</button></div><div class="body"></div></section>
+<div id="scrim" class="scrim"></div>
+<section id="confirm" class="sheet" role="dialog" aria-modal="true" aria-label="Confirmer"><i class="grip"></i><div class="body"></div></section>
+<section id="fiche" class="overlay" aria-label="Fiche"><div class="bar-top"><button id="retour" type="button">‹ Retour</button></div><div class="body"></div></section>
+<script src="/app.js"></script>
+</body>
+</html>

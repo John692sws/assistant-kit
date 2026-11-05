@@ -1,0 +1,8 @@
+{
+  "type": "object",
+  "properties": {
+    "clair": { "type": "string", "minLength": 1, "maxLength": 140 }
+  },
+  "required": ["clair"],
+  "additionalProperties": false
+}

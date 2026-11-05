@@ -1,0 +1,8 @@
+name: veille-script
+description: Écrit le petit script Python d'une veille (todo #86) à partir de la demande de l'utilisateur et de la page lue
+model: sonnet           # FIXÉ à la conception : un script court et précis à partir d'une page déjà téléchargée
+timeout_s: 180
+max_budget_usd: 0.5
+tools: []               # Claude ne lance rien : la demande et la page arrivent dans {metrics} (pas de collecteur)
+allowed_tools: []
+add_dirs: []

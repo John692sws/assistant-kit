@@ -1,0 +1,8 @@
+name: montage-scene
+description: Nouvelle proposition pour UNE scène d'un montage (mots horodatés collectés par script, catalogue fermé)
+model: sonnet           # FIXÉ à la conception : même travail que montage-plan, sur une seule scène
+timeout_s: 120
+collect: montage        # core/collectors.py : la fenêtre de mots de la scène et ses voisines (params scene)
+tools: []               # Claude ne lance rien et n'écrit aucun code : il remplit une scène
+allowed_tools: []
+add_dirs: []

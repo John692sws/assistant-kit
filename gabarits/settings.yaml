@@ -1,0 +1,38 @@
+# Relative paths are resolved against the project root.
+default_model: sonnet
+default_timeout_s: 300
+
+paths:
+  tasks_dir: tasks
+  var_dir: var
+  runs_dir: var/runs
+  todo_db: var/ultron.db
+  missions_dir: var/missions
+  logs_dir: var/logs
+
+claude:
+  retry_delay_s: 30
+  binary: null
+  disallowed_tools:
+    - "Bash(sudo:*)"
+    - "Read(~/.ssh/**)"
+    - "Read(**/auth.json)"
+    - "Edit(~/.ssh/**)"
+    - "Write(~/.ssh/**)"
+
+logging:
+  level: INFO
+  file: ultron-hub.log
+  max_bytes: 5000000
+  backup_count: 5
+
+envoi:
+  # Pas de Hermes dans le kit : envoi direct (Bot API), jeton TELEGRAM_BOT_TOKEN pris dans l'environnement.
+  mode: direct
+
+todo:
+  timezone: {{FUSEAU}}
+  categories: [perso, travail, serveur, apprentissage, admin]
+
+missions:
+  max_cost_usd: 5

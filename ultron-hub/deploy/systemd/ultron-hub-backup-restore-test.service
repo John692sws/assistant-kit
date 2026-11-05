@@ -1,0 +1,12 @@
+[Unit]
+Description=ultron-hub: monthly restore test of the backup (sentinel + one SQLite database, throwaway folder)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/workspace/projects/active/ultron-hub/.venv/bin/ultron-hub backup restore-test
+WorkingDirectory=%h/workspace/projects/active/ultron-hub
+TimeoutStartSec=2h
+Nice=10
+IOSchedulingClass=idle

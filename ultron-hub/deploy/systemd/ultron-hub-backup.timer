@@ -1,0 +1,9 @@
+[Unit]
+Description=Nightly encrypted backup at 03:30 (caught up after sleep or shutdown)
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

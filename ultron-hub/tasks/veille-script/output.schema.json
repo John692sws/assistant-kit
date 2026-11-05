@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "properties": {
+    "nom": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$"},
+    "description": {"type": "string", "minLength": 1, "maxLength": 80},
+    "every_min": {"type": "integer", "minimum": 15, "maximum": 1440},
+    "script": {"type": "string", "minLength": 1, "maxLength": 8192},
+    "declencheur": {"type": "string", "minLength": 1, "maxLength": 200},
+    "exemple_message": {"type": "string", "minLength": 1, "maxLength": 300}
+  },
+  "required": ["nom", "description", "every_min", "script", "declencheur", "exemple_message"],
+  "additionalProperties": false
+}

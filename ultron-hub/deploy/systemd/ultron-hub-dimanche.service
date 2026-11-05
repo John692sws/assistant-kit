@@ -1,0 +1,14 @@
+[Unit]
+Description=ultron-hub: rapports du dimanche (ménage, revue de cap, bilan, question du focus) puis un seul message au Fil
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory={{HOME}}/workspace/projects/active/ultron-hub
+Environment=PATH={{HOME}}/.local/bin:/usr/bin:/bin
+Environment=LANG=C.UTF-8
+ExecStart={{HOME}}/workspace/projects/active/ultron-hub/.venv/bin/ultron-hub rapports preparer
+TimeoutStartSec=2400
+Nice=10
+IOSchedulingClass=idle

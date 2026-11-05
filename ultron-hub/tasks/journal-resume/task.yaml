@@ -1,0 +1,6 @@
+name: journal-resume
+description: One-line summary of a conversation (Hermes or Claude Code) for Ultron's shared journal.
+model: haiku            # fixed at design time, light task
+tools: []               # no tools at all
+add_dirs: []
+timeout_s: 90

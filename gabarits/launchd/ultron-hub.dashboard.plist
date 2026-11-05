@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- {{NOM_ASSISTANT}}: dashboard (lecture seule, réseau privé). Équivalent launchd de ultron-hub-dashboard.service.
+     Posé dans ~/Library/LaunchAgents/, chargé par launchctl bootstrap gui/<uid>. Mac endormi = dashboard injoignable. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>ultron-hub.dashboard</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>{{HOME}}/workspace/projects/active/ultron-hub/.venv/bin/ultron-hub</string>
+    <string>dashboard</string>
+    <string>serve</string>
+    <string>--port</string>
+    <string>8787</string>
+    <string>--sans-config-code-0</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>{{HOME}}/workspace/projects/active/ultron-hub</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>LANG</key>
+    <string>en_US.UTF-8</string>
+    <key>PYTHONUTF8</key>
+    <string>1</string>
+    <key>PYTHONUNBUFFERED</key>
+    <string>1</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <!-- Restart=on-failure : relancé seulement après une sortie en erreur, au plus toutes les 10 s. Sans config/dashboard.yaml
+       valide, l'option sans-config-code-0 sort avec le code 0 : pas de relance en boucle (équivalent du code 78 de systemd). -->
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+  <key>StandardOutPath</key>
+  <string>{{HOME}}/Library/Logs/ultron-hub-dashboard.log</string>
+  <key>StandardErrorPath</key>
+  <string>{{HOME}}/Library/Logs/ultron-hub-dashboard.log</string>
+</dict>
+</plist>

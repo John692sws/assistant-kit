@@ -1,0 +1,12 @@
+[Unit]
+Description=ultron-hub: veilles (scripts silencieux, dashboard seulement si nouveau)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory={{HOME}}/workspace/projects/active/ultron-hub
+Environment=PATH={{HOME}}/.local/bin:/usr/bin:/bin
+Environment=LANG=C.UTF-8
+ExecStart={{HOME}}/workspace/projects/active/ultron-hub/.venv/bin/ultron-hub veille run
+TimeoutStartSec=600

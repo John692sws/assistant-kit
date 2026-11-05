@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- {{NOM_ASSISTANT}}: collect health metrics every 30 minutes. Équivalent launchd de ultron-hub-health.timer.
+     StartCalendarInterval : une échéance manquée pendant la veille est rattrapée une fois au réveil. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>ultron-hub.health</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>{{HOME}}/workspace/projects/active/ultron-hub/.venv/bin/ultron-hub</string>
+    <string>health</string>
+    <string>collect</string>
+    <string>--record</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>{{HOME}}/workspace/projects/active/ultron-hub</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>LANG</key>
+    <string>en_US.UTF-8</string>
+    <key>PYTHONUTF8</key>
+    <string>1</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict>
+      <key>Minute</key>
+      <integer>0</integer>
+    </dict>
+    <dict>
+      <key>Minute</key>
+      <integer>30</integer>
+    </dict>
+  </array>
+  <!-- stdout = le JSON de chaque relevé, déjà gardé dans var/ : jeté, comme le journal de systemd l'aurait fait tourner. -->
+  <key>StandardOutPath</key>
+  <string>/dev/null</string>
+  <key>StandardErrorPath</key>
+  <string>{{HOME}}/Library/Logs/ultron-hub-health.log</string>
+</dict>
+</plist>

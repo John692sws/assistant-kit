@@ -1,0 +1,307 @@
+#!/bin/sh
+# Session interactive Ultron (Opus), norme de travail sur le système depuis le 17/10/2026. Source : deploy/bin/ultron du dépôt
+# ultron-hub, posée dans ~/.local/bin/ultron par deploy/bin/poser.sh (todo #284).
+# Chaque appel ouvre une NOUVELLE session tmux permanente (elle survit à la fermeture du terminal ou de SSH),
+# nommée ultron-main-JJ-MM-HHhMM (ou ultron-<chantier>-JJ-MM-HHhMM ; les anciens noms ultron-JJ-MM-HHhMM restent reconnus comme Main) ; la session Claude porte le même nom.
+# Usage : ultron              -> session Main (orchestrateur), reprend là où la dernière passation s'est arrêtée
+#         ultron <chantier>   -> session d'un chantier connu (~/notes/prompt/<chantier>.md, `ultron-hub chantier tableau`) :
+#                                socle + mode interactif + fiche du chantier + Reprise du chantier (todo #284)
+#         ultron "focus X"    -> session Main avec une consigne du jour (un seul mot qui n'est pas un chantier aussi)
+#         ultron --chantier <chantier> "consigne" -> session de ce chantier avec une consigne du jour (todo #297)
+#         ultron --modele haiku|sonnet|opus ... -> modèle de la session (défaut opus), en tête, seul ou avant --chantier
+#                                (les routines choisissent ainsi leur modèle, todo #517)
+#         ultron nuit [--detache] -> crée le chantier de nuit nuit-JJ-JJ-MM (prompt, fiche, Reprise) et ouvre sa session ; elle
+#                                n'attend que les autres sessions au repos (todo #478) ; --detache = sans attacher ni basculer
+#         ultron liste        -> sessions ultron ouvertes (Main et chantiers), de la plus ancienne à la plus récente
+#         ultron 2            -> rejoint la session n° 2 de la liste (Ctrl+b puis d pour la quitter sans l'arrêter)
+#         ultron relance ["consigne"] -> depuis une session ultron (ex. `! ultron relance` dans Claude) : /clear puis le
+#                                prompt de départ dans la MÊME session (les sous-agents continuent, todo #291) ; hors tmux
+#                                ou si Claude ne tourne plus : ouvre une nouvelle session (même chantier si c'en était une),
+#                                y bascule, puis ferme l'ancienne. `--force` est accepté, sans effet
+#         ultron --essai ...  -> dit la session et le message qui seraient lancés, sans ouvrir de session tmux
+#                                (le prompt est quand même assemblé, pour le vérifier)
+#         ultron --help       -> cette aide, rien n'est lancé (une autre option en -… est refusée, todo #430)
+set -e
+case "${1:-}" in
+    -h|--help) sed -n '6,23s/^# \{0,1\}//p' "$0"; exit 0 ;;
+esac
+essai=""
+[ "${1:-}" = "--essai" ] && { essai=1; shift; }
+# `--modele <haiku|sonnet|opus>` (todo #517) : modèle de la session, liste fermée, opus par défaut.
+modele=opus
+if [ "${1:-}" = "--modele" ]; then
+    case "${2:-}" in
+        haiku|sonnet|opus) modele="$2"; shift 2 ;;
+        *) echo "Modèle inconnu : ${2:-(manquant)} (haiku, sonnet ou opus)." >&2; exit 1 ;;
+    esac
+fi
+# Une option inconnue n'est pas une consigne : `ultron --help` a ouvert une session Main le 26/10 (todo #430).
+case "${1:-}" in
+    --chantier) ;;
+    -*) echo "Option inconnue : $1 (voir : ultron --help)" >&2; exit 1 ;;
+esac
+[ -n "$essai" ] || command -v tmux >/dev/null || { echo "tmux est introuvable" >&2; exit 1; }
+
+hub="${ULTRON_HUB_DIR:-$HOME/workspace/projects/active/ultron-hub}"
+prompts="${ULTRON_PROMPTS_DIR:-$HOME/notes/prompt}"
+
+sessions() {
+    tmux ls -F '#{session_created} #{session_name} #{?session_attached,ouverte,détachée}' 2>/dev/null \
+        | grep ' ultron-' | sort -n | cut -d' ' -f2-
+}
+
+# Chantier connu = fichier de sujet ~/notes/prompt/<nom>.md (mêmes règles que escouade.core : nom simple, ni _socle, ni Reprise).
+est_chantier() {
+    case "$1" in
+        ""|[!a-z0-9]*|*[!a-z0-9-]*|reprise-orchestrateur|relance|liste|list|main|nuit) return 1 ;;
+    esac
+    [ "${#1}" -le 40 ] && [ -f "$prompts/$1.md" ]
+}
+
+# Chantier d'un nom de session : ultron-dashboard-20-10-09h12 -> dashboard ; ultron-main-20-10-09h12 et l'ancien
+# ultron-20-10-09h12 -> rien (session Main ; « main » n'est jamais un chantier).
+chantier_de() {
+    c=$(printf '%s\n' "$1" | sed -n 's/^ultron-\([a-z0-9][a-z0-9-]*\)-[0-9][0-9]-[0-9][0-9]-[0-9][0-9]h[0-9][0-9]\(-[0-9]\{1,3\}\)\{0,1\}$/\1/p')
+    [ "$c" = "main" ] || printf '%s\n' "$c"
+}
+
+# Message de départ : « Consigne du jour » seulement si une consigne est donnée en arguments (todo #356). $1 = fichier du prompt,
+# $2 = suite, le reste = la consigne. Sert aussi à la relance (todo #433).
+compose_msg() {
+    p="$1"; sf="$2"; shift 2
+    if [ -n "${1:-}" ]; then
+        printf '%s' "Consigne du jour : $*. Si elle se traite sans le prompt de session (question, vérification, petite lecture), fais-la directement sans lire $p. Sinon, ou pour tout travail sur le code, lis $p et applique-le.$sf"
+    else
+        printf '%s' "Lis $p et applique-le.$sf"
+    fi
+}
+
+old=""
+chantier=""
+explicite=""
+detache=""
+case "${1:-}" in
+    nuit)
+        shift
+        [ "${1:-}" = "--detache" ] && { detache=1; shift; }
+        [ $# -eq 0 ] || { echo "ultron nuit n'accepte que --detache." >&2; exit 1; }
+        if [ -n "$essai" ]; then
+            # Essai : rien n'est créé (pas d'appel à `chantier nuit creer`), on dit la session prévue.
+            chantier="nuit-$(date +%d)-$(date -d '+1 day' +%d)-$(date +%m)"
+            echo "Essai, aucune session ouverte."
+            echo "Session prévue : ultron-$chantier-$(date +%d-%m-%Hh%M)"
+            echo "Chantier : $chantier (créé au lancement par : ultron-hub chantier nuit creer)"
+            exit 0
+        fi
+        # Le nom vient du JSON de `creer` ; refus (le chantier existe déjà…) = rien n'est ouvert.
+        json=$("$hub/.venv/bin/ultron-hub" chantier nuit creer) \
+            || { printf '%s\n' "$json" >&2; echo "Chantier de nuit non créé." >&2; exit 1; }
+        chantier=$(printf '%s' "$json" | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["nom"])') \
+            && est_chantier "$chantier" || { echo "Chantier de nuit illisible après création." >&2; exit 1; }
+        explicite=1 ;;
+    relance)
+        shift
+        # --force : accepté, sans effet (plus aucun refus pour travail non commité depuis le 20/10, todo #291).
+        [ "${1:-}" = "--force" ] && shift
+        if [ -n "${TMUX:-}" ]; then
+            old=$(tmux display-message -p '#{session_name}')
+            case "$old" in ultron-*) ;; *) old="" ;; esac
+        fi
+        # Dans une session ultron où Claude tourne : /clear puis le message de départ, dans la MÊME session (todo #291).
+        # /clear garde le processus, donc les sous-agents en cours. Sinon (hors tmux, shell à l'invite) : ancien
+        # fonctionnement, nouvelle session. Les touches partent en arrière-plan : elles arrivent après la fin de cette commande.
+        # Claude tourne = un processus claude sous le shell du volet. Le programme au premier plan ne suffit pas : lancée par
+        # un agent (outil Bash), la commande met son propre bash au premier plan (deux relances ratées le 26/10, todo #430).
+        if [ -n "$old" ]; then
+            cmd=$(tmux display-message -p -t "${TMUX_PANE:-}" '#{pane_current_command}' 2>/dev/null || true)
+            pid=$(tmux display-message -p -t "${TMUX_PANE:-}" '#{pane_pid}' 2>/dev/null || true)
+            case "$pid" in ""|*[!0-9]*) ;; *) pgrep -x -P "$pid" claude >/dev/null 2>&1 && cmd=claude ;; esac
+            case "$cmd" in ""|bash|sh|zsh|fish|dash|ksh) ;; *)
+                case "$old" in *[!a-z0-9-]*) echo "Nom de session refusé." >&2; exit 1 ;; esac
+                est_msg=$(tmux show-environment -t "=$old" ULTRON_MSG 2>/dev/null || true)
+                case "$est_msg" in ULTRON_MSG=?*) ;; *) est_msg="" ;; esac
+                if [ -n "$est_msg" ]; then
+                    chantier=$(chantier_de "$old")
+                    if [ -n "$chantier" ]; then
+                        est_chantier "$chantier" || { echo "Relance refusée : le chantier $chantier n'est plus connu ($prompts/$chantier.md absent)." >&2; exit 1; }
+                        "$hub/.venv/bin/ultron-hub" prompt interactif "$chantier" --sortie "$hub/var/prompts/interactif-$chantier.md" >/dev/null 2>&1 \
+                            || { echo "Assemblage du prompt du chantier $chantier impossible." >&2; exit 1; }
+                        rprompt="$hub/var/prompts/interactif-$chantier.md"; rsuite=" Session du chantier $chantier."
+                    else
+                        rprompt="~/notes/prompt/demarrage/orchestrateur-ultron.md"; rsuite=""
+                        if "$hub/.venv/bin/ultron-hub" prompt interactif --sortie "$hub/var/prompts/interactif.md" >/dev/null 2>&1; then
+                            rprompt="$hub/var/prompts/interactif.md"
+                        else
+                            echo "Assemblage du prompt interactif impossible : ancien prompt utilisé." >&2
+                        fi
+                    fi
+                    # Todo #433 : le message est reconstruit SANS la consigne du jour d'origine (celle de ULTRON_MSG, fixée à la
+                    # création de la session) ; seule une consigne donnée à `ultron relance "…"` est reprise.
+                    rmsg=$(compose_msg "$rprompt" "$rsuite" "$@")
+                    tmux set-environment -t "=$old" ULTRON_MSG "$rmsg" \
+                        || { echo "Relance impossible : message non mis à jour dans la session $old." >&2; exit 1; }
+                    avec="sans consigne"; [ $# -gt 0 ] && avec="avec consigne"
+                    "$hub/.venv/bin/ultron-hub" journal add --source ultron --type note \
+                        "relance $old chantier=${chantier:-main} $avec (par ${ULTRON_SESSION:-?})" >/dev/null 2>&1 || true
+                    # Le message est relu dans l'environnement tmux au moment d'envoyer, jamais recollé dans une ligne de shell.
+                    t="=$old:"
+                    tmux run-shell -b "sleep 1; tmux send-keys -t '$t' -l -- /clear; tmux send-keys -t '$t' Enter; sleep 2; m=\$(tmux show-environment -t '=$old' ULTRON_MSG); tmux send-keys -t '$t' -l -- \"\${m#ULTRON_MSG=}\"; tmux send-keys -t '$t' Enter"
+                    echo "Relance : /clear puis le prompt, dans la même session $old (dans une seconde)."
+                    exit 0
+                fi ;;
+            esac
+        fi
+        # Une session de chantier se relance sur le même chantier (la consigne éventuelle s'y ajoute).
+        if [ -n "$old" ]; then
+            chantier=$(chantier_de "$old")
+            if [ -n "$chantier" ] && ! est_chantier "$chantier"; then
+                echo "Relance refusée : le chantier $chantier n'est plus connu ($prompts/$chantier.md absent)." >&2
+                exit 1
+            fi
+        fi ;;
+    liste|list)
+        [ -n "$(sessions)" ] || { echo "aucune session ultron"; exit 0; }
+        sessions | awk '{ printf "%d. %s (%s)\n", NR, $1, $2 }'
+        echo "Pour en rejoindre une : ultron <numéro>"
+        exit 0 ;;
+esac
+
+if [ $# -eq 1 ] && expr "$1" : '[0-9][0-9]*$' >/dev/null; then
+    name=$(sessions | sed -n "${1}p" | cut -d' ' -f1)
+    [ -n "$name" ] || { echo "pas de session n° $1 (voir : ultron liste)" >&2; exit 1; }
+    if [ -n "${TMUX:-}" ]; then exec tmux switch-client -t "=$name"; else exec tmux attach-session -t "=$name"; fi
+fi
+
+# `--chantier <nom> ["consigne"]` (todo #297, le dashboard) : session de ce chantier ET consigne du jour, sans deviner si un mot
+# seul est un chantier ou une consigne.
+if [ "${1:-}" = "--chantier" ]; then
+    [ $# -ge 2 ] || { echo "--chantier demande un nom de chantier." >&2; exit 1; }
+    est_chantier "$2" || { echo "Chantier inconnu : $2 ($prompts/$2.md absent)." >&2; exit 1; }
+    chantier="$2"
+    explicite=1
+    shift 2
+fi
+
+# Un seul mot qui est un chantier connu = session de ce chantier ; sinon, consigne du jour (comme avant le 20/10).
+# Après `relance`, il choisit aussi le chantier de la nouvelle session.
+if [ -z "$explicite" ] && [ $# -eq 1 ] && est_chantier "$1"; then
+    chantier="$1"
+    shift
+fi
+
+base="ultron-${chantier:-main}-$(date +%d-%m-%Hh%M)"
+name="$base"; n=2
+while tmux has-session -t "=$name" 2>/dev/null; do name="$base-$n"; n=$((n + 1)); done
+
+if [ -n "$chantier" ]; then
+    # Prompt du chantier : socle + mode interactif + fiche + Reprise du chantier. Pas de recours : sans lui, ce ne serait
+    # pas une session de chantier.
+    sortie="$hub/var/prompts/interactif-$chantier.md"
+    if ! "$hub/.venv/bin/ultron-hub" prompt interactif "$chantier" --sortie "$sortie" >/dev/null 2>&1; then
+        echo "Assemblage du prompt du chantier $chantier impossible (essai : ultron-hub prompt interactif $chantier)." >&2
+        exit 1
+    fi
+    prompt="$sortie"; suite=" Session du chantier $chantier."
+else
+    # Prompt interactif assemblé par script (socle + mode + orchestrateur + Reprise) ; recours : l'ancien fichier seul.
+    prompt="~/notes/prompt/demarrage/orchestrateur-ultron.md"; suite=""
+    if "$hub/.venv/bin/ultron-hub" prompt interactif --sortie "$hub/var/prompts/interactif.md" >/dev/null 2>&1; then
+        prompt="$hub/var/prompts/interactif.md"
+    else
+        echo "Assemblage du prompt interactif impossible : ancien prompt utilisé." >&2
+    fi
+fi
+# Todo #356 : avec une consigne, elle passe en premier ; la session ne lit le prompt que si elle en a besoin.
+msg=$(compose_msg "$prompt" "$suite" "$@")
+
+if [ -n "$essai" ]; then
+    echo "Essai, aucune session ouverte."
+    echo "Session prévue : $name"
+    echo "Chantier : ${chantier:-Main}"
+    echo "Modèle : $modele"
+    echo "Message : $msg"
+    case "$chantier" in nuit-*) echo "Démarrage : après l'attente des autres sessions (chantier nuit attendre)" ;; esac
+    exit 0
+fi
+
+# Le message passe par l'environnement de la session (jamais recollé dans une ligne de shell).
+# Quand Claude se termine, un shell prend la suite : la session reste ouverte et retrouvable.
+# Todo #298, journal commun (source ultron, type session) : « début » ici, « fin » quand Claude se termine de lui-même. Une session
+# fermée de force (ultron-hub session fermer, relancer) écrit sa fin côté Python ; jamais deux lignes de fin. Un échec du journal
+# (binaire absent, erreur) ne bloque jamais : sortie perdue, `|| true` (une écriture de fichier, sans délai notable).
+trace() { "$hub/.venv/bin/ultron-hub" journal add --source ultron --type session "$1" >/dev/null 2>&1 || true; }
+fin='d=$(( $(date +%s) - ULTRON_T0 )); m=$(( d / 60 )); "${ULTRON_HUB_BIN:-/nonexistent}" journal add --source ultron --type session "$(printf "fin %s durée=%d:%02d" "$ULTRON_SESSION" $((m / 60)) $((m % 60)))" >/dev/null 2>&1 || true'
+# Todo #537 : pendant une mise à jour de Claude Code le lien ~/.local/bin/claude peut manquer quelques secondes (panne du 03/11 19h45 :
+# « claude: command not found », session tmux restée un shell vide, journal « fin … durée=0:00 »). On vérifie donc que `claude` est
+# exécutable avant de lancer (5 essais espacés de 3 s) ; sinon aucune session, une alerte au Fil (ultron-hub send) et une ligne au journal.
+claude_pret=""
+for _essai in $(seq 1 "${ULTRON_CLAUDE_ESSAIS:-5}"); do
+    if command -v claude >/dev/null 2>&1; then claude_pret=1; break; fi
+    sleep "${ULTRON_CLAUDE_PAUSE:-3}"
+done
+if [ -z "$claude_pret" ]; then
+    trace "échec lancement $name : claude introuvable ou non exécutable (mise à jour en cours ?)"
+    "$hub/.venv/bin/ultron-hub" send --genre alerte --sujet systeme \
+        "Session $name non lancée : la commande claude est introuvable (mise à jour de Claude Code en cours ?). Relance « ultron » dans une minute." \
+        >/dev/null 2>&1 || true
+    echo "claude introuvable ou non exécutable : session $name non lancée (alerte envoyée au Fil)." >&2
+    exit 1
+fi
+trace "début $name chantier=${chantier:-main}"
+
+# Todo #354 : le serveur tmux naît dans le cgroup de celui qui lance la 1re session ; lancé depuis le dashboard (KillMode=control-group),
+# il mourait avec lui à chaque fusion qui redémarre le service, et toutes les sessions avec. Le lancement passe donc par une unité
+# scope utilisateur propre (`systemd-run --scope` garde l'environnement et attend la fin de la commande ; tmux forke son serveur, qui
+# reste dans le scope). Sans systemd-run ou sans bus utilisateur : repli sur l'appel direct.
+tmux_hors_service() {
+    if command -v systemd-run >/dev/null 2>&1 \
+        && systemd-run --user --scope --quiet --collect --unit="ultron-tmux-$name" tmux "$@" 2>/dev/null; then
+        return 0
+    fi
+    tmux "$@"
+}
+
+# Chantier de nuit (todo #478) : Claude ne démarre que quand les autres sessions ultron sont au repos (démarrage bloqué par script ;
+# panne du 29/10 : nuit lancée à 23h23 pendant qu'une session ultron finissait à 23h34). Au-delà du délai max, on démarre quand même.
+attente=""
+confiance_essais=30
+case "$chantier" in
+    nuit-*) attente='"$ULTRON_HUB_BIN" chantier nuit attendre --session "$ULTRON_SESSION" >/dev/null; '; confiance_essais=15000 ;;
+esac
+
+tmux_hors_service new-session -d -s "$name" -c "$HOME" -e "ULTRON_MSG=$msg" -e "ULTRON_SESSION=$name" -e "ULTRON_HUB_BIN=$hub/.venv/bin/ultron-hub" \
+    -e "ULTRON_T0=$(date +%s)" \
+    "${attente}claude --permission-mode auto --model $modele -n \"\$ULTRON_SESSION\" \"\$ULTRON_MSG\"; $fin; exec \"\${SHELL:-/bin/bash}\" -l"
+
+# Todo #302 : Claude pose la question de confiance du dossier (« Is this a project you trust? ») et ne retient pas la réponse pour
+# $HOME ; sans réponse la session reste bloquée. Une petite boucle bornée, détachée (ne bloque jamais le lanceur, survit à l'exec
+# plus bas), lit l'écran du pane (cible `=nom:` avec les deux-points, `=nom` seul ne trouve pas le pane). Seulement si l'écran montre
+# la ligne exacte « Yes, I trust this folder », elle envoie Bas puis Entrée, UNE fois. Jamais une autre touche, jamais sur un autre
+# texte. Elle s'arrête dès que Claude est démarré (« auto mode on » à l'écran, todo #494) ou après les essais.
+(
+    n=0
+    while [ "$n" -lt "${ULTRON_CONFIANCE_ESSAIS:-$confiance_essais}" ]; do
+        ecran=$(tmux capture-pane -p -t "=$name:" 2>/dev/null) || exit 0
+        case "$ecran" in
+            *"Yes, I trust this folder"*) tmux send-keys -t "=$name:" Down Enter; exit 0 ;;
+            *"auto mode on"*) exit 0 ;;
+        esac
+        n=$((n + 1))
+        sleep "${ULTRON_CONFIANCE_PAUSE:-1}"
+    done
+) </dev/null >/dev/null 2>&1 &
+
+echo "Session tmux : $name"
+[ -z "$detache" ] || exit 0
+if [ -n "$old" ]; then
+    # Bascule d'abord, puis ferme l'ancienne depuis le serveur tmux (détaché de ce processus, qui va mourir avec elle).
+    tmux switch-client -t "=$name"
+    tmux run-shell -b "sleep 1; tmux kill-session -t '=$old'"
+    echo "Ancienne session $old fermée."
+    exit 0
+fi
+if [ -n "${TMUX:-}" ]; then
+    exec tmux switch-client -t "=$name"
+else
+    exec tmux attach-session -t "=$name"
+fi

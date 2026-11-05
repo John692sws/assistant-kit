@@ -1,0 +1,351 @@
+/* Système de design (todos #252, #281, #466) : TOUTES les valeurs sont des jetons de :root. Style « terminal Claude Code » (todo #281,
+   remplace l'habillage Doom #269) : fond noir mat, cadres en filet fin arrondi, ni dégradé, ni ombre, ni halo, ni image. Todo #466 :
+   police proportionnelle du système pour le texte courant, chasse fixe (.mono) pour heures, chiffres et codes ; boutons à 3 niveaux
+   (.confirm plein vert = l'action principale, une par écran ; .go contour = secondaire ; .texte = tertiaire) ; rouge = destruction. Vert = action, prompt, curseur, ça avance ; ambre = en attente ; rouge = urgent ou erreur ; gris = secondaire.
+   Sombre SEULEMENT (todo #281 : aucun thème clair, aucune bascule) ; changer de style = changer ces jetons seulement. Composants : docs/dashboard.md. */
+:root {
+  --bg: #0c0c0c; --card: #0c0c0c; --high: #191919; --sheet: #121212; --line: #2e2e2e; --line2: #474747;
+  --text: #e4e4e4; --muted: #a0a0a0; --faint: #8a8a8a;
+  --accent: #3fbf7f; --on-accent: #06140c; --accent-line: rgba(63,191,127,.6);
+  --warn: #e0a84e; --on-warn: #140f05; --bad: #ef7d78; --bad-fill: #b23a3a; --on-bad: #ffffff; --bad-line: rgba(239,125,120,.6);
+  --scrim: rgba(0,0,0,.72); --tab: #0c0c0c; --toast: #191919; --on-toast: #e4e4e4;
+  /* Rayons : filet fin arrondi */
+  --r-card: 8px; --r-btn: 6px; --r-sheet: 12px; --r-pill: 6px; --r-badge: 9px; --r-bar: 0; --r-round: 50%; --r-pip: 50%; --hair: 1px;
+  /* Espacements (nommés par leur valeur en px) */
+  --sp-2: 2px; --sp-4: 4px; --sp-5: 5px; --sp-6: 6px; --sp-8: 8px; --sp-10: 10px; --sp-12: 12px; --sp-14: 14px; --sp-16: 16px; --sp-24: 24px; --sp-52: 52px;
+  --gx-l: calc(var(--sp-16) + env(safe-area-inset-left)); --gx-r: calc(var(--sp-16) + env(safe-area-inset-right));
+  /* Typographie (todo #466) : la police du système (SF Pro sur iPhone) pour le texte, sa mono (SF Mono) pour heures, chiffres et codes ;
+     aucune police chargée (CSP) */
+  --fs-10: 10px; --fs-11: 11px; --fs-12: 12px; --fs-13: 13px; --fs-14: 14px; --fs-15: 15px; --fs-16: 16px; --fs-17: 17px; --fs-18: 18px; --fs-20: 20px; --fs-28: 28px; --fs-36: 36px;
+  --font-texte: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "DejaVu Sans Mono", "Liberation Mono", monospace;
+  --titre-y: -1.85em;  /* titre d'un cadre posé sur son filet du haut */
+  /* Mouvement et gabarits */
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --tabbar: 49px; --mini: 56px; --barre: 10ch; --colonne: 2ch;
+  --bar-top: calc(env(safe-area-inset-top) + var(--sp-8) + 44px + var(--hair));  /* hauteur de .bar-top (bouton Retour 44 px) */
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; }
+/* todo #292 : le corps est collé aux quatre bords de l'écran (PWA iPhone : 100 % de html laissait un vide sous la barre d'onglets) */
+body { position: fixed; inset: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; color: var(--text); background: var(--bg);
+       font: var(--fs-15)/1.45 var(--font-texte); font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
+       -webkit-text-size-adjust: 100%; }
+[hidden] { display: none !important; }
+#top { display: flex; justify-content: space-between; align-items: center; min-height: 44px;
+       padding: calc(env(safe-area-inset-top) + var(--sp-4)) var(--gx-r) var(--sp-4) var(--gx-l); border-bottom: 1px solid var(--line); }
+#top strong { font-family: var(--font-mono); font-size: var(--fs-15); font-weight: 700; color: var(--text); }
+/* todo #466 : Moi derrière une icône en haut à droite */
+#ouvrir-moi { flex: none; width: 44px; margin: 0 calc(var(--sp-10) * -1) 0 var(--sp-4); padding: 0; border: 0; text-align: center; color: var(--muted);
+  font-family: var(--font-mono); font-size: var(--fs-18); }
+#ouvrir-moi[aria-pressed="true"] { color: var(--accent); }
+.mono, time, .val, .badge, .barre, .g, #tabs b, .chip.mono { font-family: var(--font-mono); }
+#top strong::before { content: "> "; color: var(--accent); }
+.curseur { display: inline-block; width: 1ch; height: 1.1em; margin-left: var(--sp-2); vertical-align: -.2em; background: var(--accent); animation: blink 1.1s steps(1) infinite; }
+#maj { margin-left: auto; color: var(--muted); font-family: var(--font-mono); font-size: var(--fs-12); }
+#page { overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: var(--sp-16) var(--gx-r) var(--sp-24) var(--gx-l); }
+.screen { animation: fade .18s ease-out; }
+h1 { font-size: var(--fs-18); font-weight: 700; text-transform: lowercase; margin: var(--sp-4) 0 var(--sp-24); }
+h1::before { content: "> "; color: var(--accent); }
+h2 { display: flex; align-items: center; gap: var(--sp-8); font-size: var(--fs-13); font-weight: 600; color: var(--muted); text-transform: lowercase; margin: 0 0 var(--sp-12); }
+h3 { font-size: var(--fs-15); margin: var(--sp-8) 0; }
+/* Cadre : filet fin arrondi ; son titre est posé sur le filet du haut (╭─ titre ──╮) */
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); padding: var(--sp-14) var(--sp-12) var(--sp-12); margin: var(--sp-24) 0 var(--sp-12); }
+.card > h2 { width: fit-content; margin: var(--titre-y) 0 var(--sp-6) var(--sp-4); padding: 0 var(--sp-6); background: var(--card); }
+#fil-liste, #fil-nouveau { position: relative; }
+button.icone-vu { position: absolute; top: calc(var(--sp-24) * -1); right: var(--sp-8); z-index: 1; background: var(--card); width: 44px; min-height: 44px; margin: 0; padding: 0; border: 0; color: var(--accent); display: flex; align-items: center; justify-content: center; }
+.card > h2::before { content: "─"; color: var(--line2); margin-right: var(--sp-2); }
+.row { padding: var(--sp-12) 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.row:first-child { border-top: 0; padding-top: 0; }
+.row:last-child { padding-bottom: 0; }
+strong { font-weight: 700; font-size: var(--fs-15); }
+.overlay .body > strong:first-child { display: block; font-size: var(--fs-17); margin-top: var(--sp-12); }
+p { margin: var(--sp-6) 0; }
+.muted { color: var(--muted); font-size: var(--fs-13); }
+.err { color: var(--bad); }
+.vert { color: var(--accent); } .ambre { color: var(--warn); } .rouge { color: var(--bad); } .pale { color: var(--faint); }
+.pre { white-space: pre-wrap; font-size: var(--fs-13); margin: var(--sp-8) 0; }
+.big { font-size: var(--fs-28); font-weight: 700; }
+.bar { height: 6px; border-radius: var(--r-bar); background: var(--high); margin: var(--sp-6) 0; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); transform-origin: left; }
+.bar > i.warn { background: var(--warn); }
+.bar > i.bad { background: var(--bad); }
+.kv { display: flex; justify-content: space-between; gap: var(--sp-12); padding: var(--sp-4) 0; }
+.kv span:first-child { color: var(--muted); }
+.kv span:last-child { text-align: right; }
+.chip { display: inline-block; padding: var(--sp-2) var(--sp-10); border-radius: var(--r-pill); color: var(--muted); font-size: var(--fs-12); margin: var(--sp-4) var(--sp-4) 0 0;
+  border: 1px solid var(--line); }
+.chip.warn { color: var(--warn); }
+.chip.ok { color: var(--accent); }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: var(--r-pip); background: var(--accent); flex: none; }
+/* Glyphes terminal (todo #281) : posés par app.js à la place des émojis d'interface ; 🔀 ❓ ✅ 📎 restent des émojis */
+.g { display: inline-block; min-width: var(--colonne); margin-right: var(--sp-4); font-weight: 700; font-style: normal; text-align: center; }
+.g.emoji { font-weight: 400; }
+.g.vit { animation: pulse 1.4s ease-in-out infinite; }
+/* Todos (todo #242) : filtres en puces défilantes, pages, sections repliées */
+.chips { display: flex; gap: var(--sp-6); overflow-x: auto; margin: var(--sp-8) 0; padding-bottom: var(--sp-2); }
+button.chip { flex: none; width: auto; min-height: 44px; margin: 0; padding: var(--sp-6) var(--sp-12); font-size: var(--fs-13); font-weight: 500; }
+button.chip.on { color: var(--accent); font-weight: 700; border-color: var(--accent-line); }
+button.chip.on::before { content: "● "; }
+.nav { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-8); }
+.nav button { width: auto; flex: 1; }
+details { border-top: 1px solid var(--line); padding: var(--sp-4) 0; }
+summary { min-height: 44px; display: flex; align-items: center; font-weight: 600; cursor: pointer; list-style: none; }
+summary::-webkit-details-marker { display: none; }
+summary::before { content: "▸"; color: var(--faint); width: var(--colonne); flex: none; }
+details[open] > summary::before { content: "▾"; }
+.dot.warn { background: var(--warn); }
+.dot.live { animation: pulse 1.6s ease-in-out infinite; }
+/* Boutons : cadre fin ; UN seul plein vert par écran (.confirm de la feuille) ; risque en rouge */
+button, a.btn { display: block; width: 100%; min-height: 44px; margin: var(--sp-8) 0 0; padding: var(--sp-10) var(--sp-14); text-align: left; font: inherit; font-weight: 600;
+  color: var(--text); background: transparent; border: 1px solid var(--line2); border-radius: var(--r-btn); text-decoration: none; cursor: pointer;
+  transition: transform .12s var(--ease), opacity .12s; }
+button:active { transform: scale(.98); opacity: .8; }
+button:disabled { opacity: .45; }
+button.go { color: var(--accent); border-color: var(--accent-line); }
+button.texte { width: auto; min-width: 44px; border: 0; background: none; padding-left: 0; padding-right: var(--sp-8); color: var(--accent); font-weight: 600; }
+button.texte.danger { color: var(--bad); }
+button.confirm { color: var(--on-accent); background: var(--accent); border-color: var(--accent); text-align: center; }
+button.danger { color: var(--bad); border-color: var(--bad-line); }
+button.confirm.danger { color: var(--on-bad); background: var(--bad-fill); border-color: var(--bad-fill); }
+button.list { display: flex; justify-content: space-between; align-items: center; text-align: left; font-weight: 500; border: 0; border-top: 1px solid var(--line);
+  margin: 0; padding: var(--sp-10) 0; border-radius: 0; }
+button.list:first-child { border-top: 0; }
+button.list > .g { color: var(--muted); }
+button.list::after { content: "›"; margin-left: auto; padding-left: var(--sp-8); color: var(--faint); }
+select, textarea { display: block; width: 100%; min-height: 44px; margin: var(--sp-8) 0 0; padding: var(--sp-10) var(--sp-12); font: inherit; font-size: var(--fs-16); color: var(--text);
+  background: var(--high); border: 1px solid var(--line2); border-radius: var(--r-btn); caret-color: var(--accent); }
+select:focus, textarea:focus { outline: 0; border-color: var(--accent-line); }
+textarea { resize: vertical; }
+
+/* Accueil = poste de commandement (todo #281) : bandeau état, puis des lignes « glyphe · nom · valeur » sur deux lignes au plus */
+button.etat { display: flex; align-items: center; min-height: 44px; margin: 0; padding: var(--sp-8) var(--sp-12); font-weight: 500; overflow-wrap: anywhere; }
+button.etat span { white-space: pre-wrap; }
+button.ligne { display: grid; grid-template-columns: var(--colonne) minmax(0, 1fr) auto; column-gap: var(--sp-8); align-items: baseline;
+  margin: 0; padding: var(--sp-10) 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; font-weight: 500; }
+button.ligne:first-child { border-top: 0; padding-top: var(--sp-4); }
+.ligne .g { margin: 0; grid-row: 1; }
+.ligne .nom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ligne .val { font-weight: 700; text-align: right; }
+.ligne .det { grid-column: 2 / 4; color: var(--muted); font-size: var(--fs-13); font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.barre { color: var(--accent); letter-spacing: 0; }
+.card details { border-top: 1px solid var(--line); padding: 0; }
+.card details > summary { color: var(--muted); font-weight: 500; font-size: var(--fs-13); }
+.dec p { font-weight: 600; }
+.acts { display: flex; flex-wrap: wrap; align-items: flex-end; column-gap: var(--sp-10); }
+.acts button, .acts > .form { flex: 1; min-width: 0; text-align: center; }
+.acts button.texte, .acts > .form:has(button.texte) { flex: none; min-width: 44px; }
+/* À toi (todo #466) : une carte = une décision : tête (genre · chantier, réf. en gris), titre, ce qui change, boutons */
+.carte .dec-tete { display: flex; justify-content: space-between; gap: var(--sp-8); color: var(--muted); font-size: var(--fs-13); }
+.carte .dec-titre { margin: var(--sp-4) 0 var(--sp-6); font-size: var(--fs-16); line-height: 1.35; overflow-wrap: anywhere; }
+.carte .lignes { margin: var(--sp-6) 0 0; }
+.ligne-coupee { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.notes { color: var(--text); font-size: var(--fs-15); }
+
+/* Dock : onglets, collés en bas, dans la zone sûre */
+#dock { position: relative; background: var(--tab); border-top: 1px solid var(--line); }
+#tabs { display: flex; padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+#tabs button { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-2); flex: 1;
+  height: var(--tabbar); min-height: 44px; margin: 0; padding: var(--sp-4) 0; border: 0; border-radius: 0; color: var(--faint); font-size: var(--fs-12); font-weight: 500; text-align: center; }
+#tabs b { font-size: var(--fs-18); line-height: 1; }
+#tabs [aria-selected="true"] { color: var(--accent); font-weight: 700; }
+/* Pastille ambre : une seule, ce qui attend ta décision (Accueil) ; Travail : un point discret (.pip) */
+.badge { position: absolute; top: var(--sp-4); left: 50%; margin-left: var(--sp-8); min-width: 18px; padding: 0 var(--sp-5); border-radius: var(--r-badge);
+  background: var(--warn); color: var(--on-warn); font-size: var(--fs-11); font-weight: 800; line-height: 18px; font-style: normal; text-align: center; }
+.pip { position: absolute; top: var(--sp-10); left: 50%; margin-left: var(--sp-12); width: 6px; height: 6px; border-radius: var(--r-pip); background: var(--warn); }
+#toasts { position: absolute; left: var(--sp-16); right: var(--sp-16); bottom: 100%; margin-bottom: var(--sp-8); pointer-events: none; display: flex; flex-direction: column; gap: var(--sp-6); align-items: center; }
+.toast { max-width: 100%; padding: var(--sp-10) var(--sp-14); border-radius: var(--r-btn); background: var(--toast); color: var(--on-toast); font-size: var(--fs-13); font-weight: 600;
+  border: 1px solid var(--line2); opacity: 0; transform: translateY(8px); transition: transform .26s var(--ease), opacity .26s; }
+.toast.in { opacity: 1; transform: none; }
+.toast.bad { background: var(--bad-fill); color: var(--on-bad); border-color: var(--bad-fill); }
+.toast .g, button.confirm .g { color: inherit; }
+.erreur { margin: 0 0 var(--sp-8); padding: var(--sp-10) var(--sp-14); border-radius: var(--r-btn); color: var(--bad); font-weight: 600; border: 1px solid var(--bad-line); }
+#ptr { position: fixed; z-index: 2; top: calc(env(safe-area-inset-top) + var(--sp-52)); left: 50%; width: 32px; height: 32px; margin-left: calc(-1 * var(--sp-16)); line-height: 30px;
+  text-align: center; border-radius: var(--r-round); background: var(--bg); color: var(--accent); font-weight: 700; opacity: 0; pointer-events: none; border: 1px solid var(--accent-line); }
+#ptr.lache { transition: transform .26s var(--ease), opacity .26s; }
+
+/* Feuille du bas (confirmation) et fiche plein écran */
+.scrim { position: fixed; inset: 0; background: var(--scrim); opacity: 0; visibility: hidden; transition: opacity .26s var(--ease), visibility .26s; }
+.scrim.open { opacity: 1; visibility: visible; }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; max-height: 85%; overflow-y: auto; overscroll-behavior: contain; background: var(--sheet);
+  border-top: 1px solid var(--line2); border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+  padding: var(--sp-8) var(--gx-r) calc(var(--sp-16) + env(safe-area-inset-bottom)) var(--gx-l);
+  transform: translateY(100%); visibility: hidden; transition: transform .26s var(--ease), visibility .26s; }
+.sheet.open { transform: none; visibility: visible; }
+.grip { display: block; width: 36px; height: 4px; border-radius: var(--r-bar); background: var(--line2); margin: 0 auto var(--sp-12); }
+.overlay { position: fixed; inset: 0; overflow-y: auto; overscroll-behavior: contain; background: var(--bg);
+  padding: 0 var(--gx-r) calc(var(--sp-24) + env(safe-area-inset-bottom)) var(--gx-l);
+  transform: translateY(100%); visibility: hidden; transition: transform .26s var(--ease), visibility .26s; }
+.overlay.open { transform: none; visibility: visible; }
+.bar-top { position: sticky; top: 0; z-index: 1; padding: calc(env(safe-area-inset-top) + var(--sp-4)) 0 var(--sp-4); background: var(--bg); border-bottom: 1px solid var(--line); }
+#retour, #analyse-retour { width: auto; margin: 0; padding: 0 var(--sp-12) 0 0; border: 0; color: var(--accent); }
+#fiche > .body > *, #analyse > .body > * { margin-bottom: var(--sp-8); }
+
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pulse { 50% { opacity: .35; } }
+@keyframes blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: .01ms !important; animation: none !important; }
+  .sheet, .overlay { transform: none; opacity: 0; }
+  .sheet.open, .overlay.open { opacity: 1; }
+}
+/* La feuille de confirmation passe au-dessus d'une fiche ouverte (todo #242) */
+.overlay { z-index: 2; }
+.scrim { z-index: 3; }
+.sheet { z-index: 4; }
+
+/* Session ultron (todos #264, #265 ; écran refait par #283) : fil façon Claude Code, « > » toi, « ● » l'agent, « └ » un outil */
+.fil { display: flex; flex-direction: column; gap: var(--sp-10); }
+.bulle { white-space: pre-wrap; overflow-wrap: anywhere; padding-left: var(--colonne); text-indent: calc(-1 * var(--colonne)); }
+.bulle::before { display: inline-block; width: var(--colonne); text-indent: 0; }
+.bulle.moi { padding: var(--sp-6) var(--sp-8) var(--sp-6) calc(var(--sp-8) + var(--colonne)); background: var(--high); border-radius: var(--r-btn); }
+.bulle.moi::before { content: ">"; color: var(--accent); font-weight: 700; }
+.bulle.lui::before { content: "●"; color: var(--text); }
+.bulle time { display: block; text-indent: 0; margin-top: var(--sp-2); font-size: var(--fs-11); color: var(--faint); }
+details.fil > summary { gap: var(--sp-8); font-weight: 500; }
+details.fil.nonlue > summary { font-weight: 700; }
+details.fil > summary > .titre-fil, details.fil > summary > span:first-of-type { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+details.fil > summary .g { flex: none; color: var(--muted); }
+details.fil > .pre { padding-left: var(--colonne); color: var(--muted); }
+/* todo #347: unfolded steps of a group (466) or of one todo sit under their line: indented, thin left rule */
+details.fil.groupe > details.fil { margin-left: var(--colonne); padding-left: var(--sp-8); border-left: 2px solid var(--line); }
+details.fil.groupe > details.fil.toi { margin-left: calc(var(--colonne) + var(--sp-24)); }
+/* todo #351: closed drawer of technical details at the bottom of an unfolded message */
+details.fil details.tech, .notif-plus details.tech { padding-left: var(--colonne); }
+details.tech > summary { min-height: 44px; display: flex; align-items: center; font-size: var(--fs-13); color: var(--faint); cursor: pointer; }
+details.tech > pre { margin: 0; font-size: var(--fs-11); color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
+details.fil .lien-fil { display: inline-flex; align-items: center; min-width: 44px; min-height: 44px; max-width: 100%; color: var(--accent); text-decoration: underline; overflow-wrap: anywhere; }
+details.fil .pj { display: block; width: 100%; padding-right: 0; border: 0; background: none; text-align: left; font: inherit; color: inherit; min-height: 44px; padding: var(--sp-6) 0 var(--sp-6) var(--colonne); }
+details.fil .pj img { display: block; max-width: 100%; max-height: 40vh; border: 1px solid var(--line); border-radius: var(--r-btn); }
+details.fil .pj-lien { width: 100%; border: 0; background: none; font: inherit; text-align: left; display: flex; align-items: center; min-height: 44px; padding-left: var(--colonne); color: var(--accent); overflow-wrap: anywhere; }
+/* todo #350: attachments on the CLOSED line: small thumbnail (title keeps its ellipsis, it is the only flexible part) or a file-name chip */
+details.fil > summary > img.fil-vignette { flex: none; width: 48px; height: 48px; object-fit: cover; border: 1px solid var(--line); border-radius: var(--r-btn); }
+details.fil > summary > .fil-puce { flex: 0 1 30%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: var(--sp-2) var(--sp-8); border: 1px solid var(--line); border-radius: var(--r-btn); color: var(--muted); font-size: var(--fs-13); }
+details.fil .pj-carte { display: flex; align-self: stretch; flex-direction: column; align-items: flex-start; gap: var(--sp-2); width: 100%; min-height: 44px; margin: var(--sp-6) 0; padding: var(--sp-8) var(--sp-12); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--high); font: inherit; color: inherit; text-align: left; }
+details.fil .pj-carte .pj-nom { max-width: 100%; overflow-wrap: anywhere; }
+details.fil .pj-carte .pj-meta { font-size: var(--fs-13); color: var(--accent); }
+details.outil { align-self: stretch; border-top: 0; padding: 0 0 0 var(--colonne); }
+details.outil summary { min-height: 44px; font-weight: 500; font-size: var(--fs-13); color: var(--muted); }
+details.outil summary::before { content: "└"; }  /* ⎿ de Claude Code : absent de beaucoup de polices */
+details.outil summary span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+details.outil .pre { padding: 0 0 var(--sp-6) var(--colonne); color: var(--muted); }
+.evt { color: var(--muted); font-size: var(--fs-13); padding-left: var(--colonne); }
+/* todo #278 : replié en une ligne, collé sous la barre « Retour » pendant le défilement ; le détail se déplie au toucher */
+.avancement { position: sticky; top: var(--bar-top); z-index: 1; padding: 0 var(--sp-12); margin: var(--sp-8) 0 var(--sp-12); background: var(--bg);
+  border: 1px solid var(--line); border-radius: var(--r-card); max-height: 60vh; overflow-y: auto; }
+.avancement summary { gap: var(--sp-8); font-weight: 500; font-size: var(--fs-13); color: var(--muted); }
+.avancement summary span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.avancement summary b { color: var(--text); font-weight: 700; }
+.avancement[open] { padding-bottom: var(--sp-12); }
+
+/* Action en fond (todo #267) : barre et étapes d'une fusion, relues toutes les 2 s */
+.etapes { margin: var(--sp-8) 0; }
+.etape { display: flex; justify-content: space-between; gap: var(--sp-12); padding: var(--sp-6) 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.etape.a_venir > span:first-child { color: var(--muted); }
+.etape.en_cours > span:first-child { font-weight: 700; }
+.etape.refus > span:first-child { color: var(--bad); font-weight: 700; }
+
+/* Le Pilote d'une session (todo #283) : barre d'une ligne, fil ou terminal brut, puis en bas réponses rapides, invite et touches */
+.pilote summary .nom { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-weight: 700; }
+.pilote summary .met { flex: none; }
+.pilote summary .g { margin: 0; }
+.vues { margin: 0 0 var(--sp-8); }
+.terminal, .code, .invite input { font-family: var(--font-mono); }
+.terminal { margin: 0; padding: var(--sp-8); font: var(--fs-12)/1.35 var(--font-mono); white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: hidden; color: var(--text);
+  background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-card); -webkit-overflow-scrolling: touch; }
+/* todo #292 : plein écran. La fiche devient une colonne de 100dvh (hauteur recalculée par app.js au clavier) : barre, état, fil qui défile,
+   puis la saisie collée en bas, zone sûre comprise */
+/* Lecteur de pièces jointes plein écran dans la page (todo #373) : sombre, rien sous le trait d'accueil iOS */
+.lecteur { position: fixed; inset: 0; z-index: 5; display: flex; flex-direction: column; background: var(--bg); color: var(--text); }
+.lecteur-haut { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-8); border-bottom: 1px solid var(--line);
+  padding: calc(env(safe-area-inset-top) + var(--sp-4)) var(--gx-r) var(--sp-4) var(--gx-l); }
+.lecteur-nom { order: 9; flex: 1 0 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: var(--fs-12); }
+.lecteur-btn { width: auto; margin: 0; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; padding: 0 var(--sp-10);
+  border: 1px solid var(--line2); border-radius: var(--r-btn); background: none; color: var(--accent); font: inherit; font-size: var(--fs-13); text-decoration: none; white-space: nowrap; }
+.lecteur-zone { flex: 1; min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  padding: var(--sp-12) var(--gx-r) calc(var(--sp-16) + env(safe-area-inset-bottom)) var(--gx-l); }
+.lecteur-img { display: block; max-width: 100%; margin: 0 auto; touch-action: pinch-zoom pan-x pan-y; }
+.lecteur-zone audio { display: block; width: 100%; min-height: 44px; }
+.lecteur-frame { display: block; width: 100%; height: 100%; border: 0; background: var(--bg); }
+.lecteur-zone:has(.lecteur-frame) { padding: 0 0 env(safe-area-inset-bottom); overflow: hidden; }
+.lecteur .code { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: var(--fs-13); }
+.md p, .md ul { margin: 0 0 var(--sp-10); overflow-wrap: anywhere; }
+.md ul { padding-left: var(--sp-16); }
+.md-h { margin: var(--sp-14) 0 var(--sp-6); font-weight: 700; color: var(--accent); }
+.md .code { padding: var(--sp-8); margin-bottom: var(--sp-10); border: 1px solid var(--line); border-radius: var(--r-btn); }
+.md code { color: var(--warn); }
+
+#fiche.plein { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; padding-bottom: 0; }
+#fiche.plein > .bar-top { flex: none; }
+#fiche.plein > .body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+#fiche.plein .avancement { position: static; flex: none; margin: 0 0 var(--sp-6); }
+#fiche.plein .vues, #fiche.plein .muted, #fiche.plein > .body > .err { flex: none; }
+/* todo #293 : la barre « Retour » cède la place à UNE ligne fine (‹ · état · fil|term) ; le fil prend le reste ; pas d'onglets dessous */
+#fiche.plein > .bar-top { display: none; }
+#fiche.plein > .body > * { margin-bottom: 0; }
+body.pilote #tabs { display: none; }
+.pilote-haut { flex: none; display: flex; align-items: center; gap: var(--sp-4); padding-top: env(safe-area-inset-top); border-bottom: 1px solid var(--line); }
+.pilote-haut button { margin: 0; min-height: 44px; border: 0; }
+.pilote-haut .chevron { flex: none; width: 44px; padding: 0; text-align: center; font-size: var(--fs-20); color: var(--accent); }
+.pilote-etat { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-4); padding: 0; text-align: left; font-size: var(--fs-11); color: var(--muted); font-weight: 500; }
+.pilote-etat .nom { flex: none; color: var(--text); font-size: var(--fs-12); font-weight: 700; }
+.pilote-etat .met { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pilote-etat .g { margin: 0; }
+.pilote-haut .vues { flex: none; display: flex; gap: 0; margin: 0; }
+.pilote-haut .vues button.chip { min-width: 44px; padding: 0 var(--sp-4); font-size: var(--fs-12); color: var(--faint); }
+.pilote-haut .vues button.chip.on { color: var(--accent); }
+.pilote-haut .vues button.chip.on::before { content: none; }
+.pilote-detail { padding: var(--sp-4) var(--sp-12) var(--sp-12); }
+#fiche.plein .fil { padding: var(--sp-8) 0; }
+#fiche.plein .fil, #fiche.plein .terminal { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+#fiche.plein .fil[hidden], #fiche.plein .terminal[hidden] { display: none; }
+/* zone sûre du bas comptée UNE fois, ici (la fiche plein écran n'en a pas, les onglets sont masqués) ; rognée à ce que demande
+   la barre d'accueil de l'iPhone, et nulle clavier ouvert (#fiche.clavier) : plus de bandeau vide sous la saisie (todo #293) */
+.pilote-bas { flex: none; display: flex; flex-direction: column; gap: var(--sp-4); margin: 0;
+  padding: var(--sp-4) 0 max(var(--sp-4), calc(env(safe-area-inset-bottom) - var(--sp-14)));
+  background: var(--bg); border-top: 1px solid var(--line); }
+.pilote-bas .chips { margin: 0; }
+#fiche.clavier .pilote-bas { padding-bottom: var(--sp-4); }
+.rapides { display: flex; flex-wrap: nowrap; gap: var(--sp-6); align-items: center; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.rapides button.chip { flex: none; max-width: 80%; min-width: 44px; padding: 0 var(--sp-10); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--warn); border-color: var(--warn); }
+.raccourcis { display: flex; gap: var(--sp-6); }
+.raccourcis[hidden], .invite[hidden] { display: none; }
+button.raccourci { flex: 1; text-align: center; line-height: 1.2; min-width: 0; min-height: 44px; margin: 0; padding: 0 var(--sp-6); font-size: var(--fs-14); }
+.invite { display: flex; align-items: center; gap: var(--sp-4); }
+button.joindre { flex: none; width: 44px; min-height: 44px; margin: 0; padding: 0; border: 0; text-align: center; font-size: var(--fs-18); }
+button.joindre.en-cours { width: auto; padding: 0 var(--sp-8); font-size: var(--fs-14); font-variant-numeric: tabular-nums; }
+.invite input { flex: 1; min-width: 0; min-height: 44px; margin: 0; padding: 0 var(--sp-4); font: inherit; font-size: var(--fs-16); color: var(--text);
+  background: transparent; border: 0; border-bottom: 1px solid var(--line2); border-radius: 0; caret-color: var(--accent); }
+.invite input:focus { outline: 0; border-color: var(--accent-line); }
+#analyse { z-index: 3; }  /* 📎 du Pilote : Analyser s'ouvre au-dessus de la session (la feuille reste au-dessus) */
+
+/* Fait aujourd'hui (todo #270) */
+.vide { color: var(--muted); }
+.fait-l { display: flex; align-items: baseline; gap: var(--sp-8); padding: var(--sp-8) 0; border-top: 1px solid var(--line); }
+.fait-l:first-child { border-top: 0; padding-top: var(--sp-4); }
+.fait-l .g { margin: 0; }
+.fait-l .t { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+/* todo #346: Journal by day, sticky day header; the 44 px chips come from .chips / button.chip */
+#fil-liste .jour { position: sticky; top: 0; z-index: 1; background: var(--card); padding: var(--sp-8) 0 var(--sp-4); margin: var(--sp-8) 0 0; color: var(--faint); font-size: var(--fs-12); font-weight: 600; border-bottom: 1px solid var(--line); }
+button.chip.lire { display: block; margin: var(--sp-4) 0 0; text-indent: 0; min-height: 44px; }
+
+/* todo #409: unread notifications as cards (Nouveau), 44 px tap targets */
+.notif { border-bottom: 1px solid var(--line); }
+.notif:last-child { border-bottom: 0; }
+button.notif-tete { display: flex; align-items: center; gap: var(--sp-10); width: 100%; min-height: 44px; margin: 0; padding: var(--sp-8) 0; border: 0; background: none; font: inherit; color: inherit; text-align: left; }
+.notif-col { flex: 1; min-width: 0; }
+.notif-titre { display: flex; align-items: center; gap: var(--sp-8); font-weight: 700; }
+.notif-titre .titre-fil { flex: 1; } .notif-titre span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.notif-apercu { margin-top: var(--sp-2); color: var(--muted); font-size: var(--fs-13); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+img.notif-vignette { flex: none; width: 56px; height: 56px; object-fit: cover; border: 1px solid var(--line); border-radius: var(--r-btn); }
+.notif-plus { padding-bottom: var(--sp-8); }
+.notif-plus[hidden] { display: none; }
+.notif-plus .pj, .notif-plus .pj-lien { display: block; width: 100%; min-height: 44px; border: 0; background: none; font: inherit; text-align: left; color: var(--accent); padding: var(--sp-6) 0; overflow-wrap: anywhere; }
+.notif-plus .pj img { display: block; max-width: 100%; max-height: 40vh; border: 1px solid var(--line); border-radius: var(--r-btn); }
+.notif-plus .lien-fil { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent); text-decoration: underline; overflow-wrap: anywhere; }
+.habitude-texte { max-height: 60vh; overflow-y: auto; border: 1px solid var(--line); border-radius: var(--r-btn); }  /* todo #429 */
+/* todo #466 : les 4 filtres du Fil tiennent sur 375 px */
+#fil-liste .chips button.chip { flex: 1 1 auto; padding: var(--sp-6) var(--sp-8); text-align: center; }
+#fil-liste .chips button.chip.on::before { content: none; }
+/* todo #353: what the user sent (📎 joindre) = a card set apart on the right, accent edge, not signed Ultron */
+details.fil.toi, .notif.toi { margin-left: var(--sp-24); border-right: 3px solid var(--accent-line); padding-right: var(--sp-8); }

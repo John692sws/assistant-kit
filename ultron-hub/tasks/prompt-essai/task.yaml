@@ -1,0 +1,6 @@
+name: prompt-essai
+description: Answer one rule scenario under an assembled orchestrator prompt, without any tool (prompt rule replay).
+model: sonnet           # fixed so that replays stay comparable
+tools: []               # no tools at all
+add_dirs: []
+timeout_s: 120

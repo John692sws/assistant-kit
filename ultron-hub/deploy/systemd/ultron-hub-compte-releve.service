@@ -1,0 +1,12 @@
+[Unit]
+Description=ultron-hub: quota reading of the two Claude accounts, appended to the history (no AI, no token stored)
+
+[Service]
+Type=oneshot
+WorkingDirectory={{HOME}}/workspace/projects/active/ultron-hub
+Environment=PATH={{HOME}}/.local/bin:/usr/bin:/bin
+Environment=LANG=C.UTF-8
+ExecStart={{HOME}}/workspace/projects/active/ultron-hub/.venv/bin/ultron-hub compte releve
+TimeoutStartSec=120
+Nice=10
+IOSchedulingClass=idle

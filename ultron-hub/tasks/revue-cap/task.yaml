@@ -1,0 +1,7 @@
+name: revue-cap
+description: Weekly cap review (todo #190): per-chantier verdict from the facts of cap collect, up to 3 corrections, applies nothing
+model: opus             # FIXED at design time: critical judgement over the whole week, not a summary
+timeout_s: 600
+tools: []               # Claude runs nothing: the facts come in {metrics}
+allowed_tools: []
+add_dirs: []

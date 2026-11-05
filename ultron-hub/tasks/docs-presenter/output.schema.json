@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "properties": {
+    "titre": {"type": "string"},
+    "puces": {"type": "array", "items": {"type": "string"}},
+    "comparaison": {"type": "string"},
+    "sources": {"type": "array", "items": {"type": "string"}}
+  },
+  "required": ["titre", "puces", "comparaison", "sources"],
+  "additionalProperties": false
+}

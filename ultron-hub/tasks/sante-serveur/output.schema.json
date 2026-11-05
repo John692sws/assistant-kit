@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "properties": {
+    "level": {"type": "string", "enum": ["ok", "warn", "critical"]},
+    "summary": {"type": "string"},
+    "points": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "level": {"type": "string", "enum": ["ok", "warn", "critical"]},
+          "label": {"type": "string"},
+          "detail": {"type": "string"}
+        },
+        "required": ["level", "label", "detail"],
+        "additionalProperties": false
+      }
+    },
+    "recommendations": {"type": "array", "items": {"type": "string"}}
+  },
+  "required": ["level", "summary", "points", "recommendations"],
+  "additionalProperties": false
+}

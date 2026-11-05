@@ -1,0 +1,7 @@
+name: menage-audit
+description: "Bimonthly audit of the server tidy-up map (config/menage.yaml): proposes YAML changes, applies nothing"
+model: sonnet           # FIXED at design time: needs judgement, not heavy reasoning
+timeout_s: 300
+tools: []               # Claude runs nothing: the data comes in {metrics}
+allowed_tools: []
+add_dirs: []

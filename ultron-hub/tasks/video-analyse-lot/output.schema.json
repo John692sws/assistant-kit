@@ -1,0 +1,426 @@
+{
+  "type": "object",
+  "properties": {
+    "overview": {
+      "type": "string"
+    },
+    "timeline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "number"
+          },
+          "end": {
+            "type": "number"
+          },
+          "said": {
+            "type": "string"
+          },
+          "shown": {
+            "type": "string"
+          },
+          "sound": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "said",
+          "shown",
+          "sound"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "technique": {
+      "type": "array",
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "properties": {
+          "t": {
+            "type": "number"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "t",
+          "text"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "unreadable": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "digest": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "time": {
+            "type": "number"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "time",
+          "text"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "cas": {
+      "type": "string",
+      "enum": [
+        "",
+        "inspiration",
+        "info",
+        "methode",
+        "donnees"
+      ]
+    },
+    "cas_secondaires": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "string",
+        "enum": [
+          "inspiration",
+          "info",
+          "methode",
+          "donnees"
+        ]
+      }
+    },
+    "devine": {
+      "type": "object",
+      "properties": {
+        "phrase": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "pourquoi": {
+          "type": "string",
+          "maxLength": 300
+        }
+      },
+      "required": [
+        "phrase",
+        "pourquoi"
+      ],
+      "additionalProperties": false
+    },
+    "inspiration": {
+      "type": "object",
+      "properties": {
+        "sujet": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "analogie": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "comment_dit": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "maxLength": 400
+          }
+        },
+        "comment_montre": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "properties": {
+              "t": {
+                "type": "number"
+              },
+              "text": {
+                "type": "string",
+                "maxLength": 400
+              }
+            },
+            "required": [
+              "t",
+              "text"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "non_montre": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "type": "string",
+            "maxLength": 300
+          }
+        },
+        "face_ultron": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "properties": {
+              "idee": {
+                "type": "string",
+                "maxLength": 300
+              },
+              "etat": {
+                "type": "string",
+                "enum": [
+                  "existe",
+                  "en_partie",
+                  "non"
+                ]
+              },
+              "fichier": {
+                "type": "string",
+                "maxLength": 200
+              }
+            },
+            "required": [
+              "idee",
+              "etat",
+              "fichier"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "pour_nous": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "properties": {
+              "application": {
+                "type": "string",
+                "maxLength": 400
+              },
+              "chantier": {
+                "type": "string",
+                "maxLength": 60
+              },
+              "dossier_dabord": {
+                "type": "string",
+                "maxLength": 300
+              }
+            },
+            "required": [
+              "application",
+              "chantier",
+              "dossier_dabord"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "sujet",
+        "analogie",
+        "comment_dit",
+        "comment_montre",
+        "non_montre",
+        "face_ultron",
+        "pour_nous"
+      ],
+      "additionalProperties": false
+    },
+    "info": {
+      "type": "object",
+      "properties": {
+        "faits": {
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "type": "string",
+            "maxLength": 300
+          }
+        },
+        "opinions": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "type": "string",
+            "maxLength": 300
+          }
+        }
+      },
+      "required": [
+        "faits",
+        "opinions"
+      ],
+      "additionalProperties": false
+    },
+    "methode": {
+      "type": "array",
+      "maxItems": 12,
+      "items": {
+        "type": "string",
+        "maxLength": 300
+      }
+    },
+    "donnees": {
+      "type": "array",
+      "maxItems": 12,
+      "items": {
+        "type": "string",
+        "maxLength": 300
+      }
+    },
+    "ecarts": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": "string",
+        "maxLength": 300
+      }
+    },
+    "a_verifier": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "string",
+        "maxLength": 300
+      }
+    },
+    "rangement": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "fiche",
+              "todo"
+            ]
+          },
+          "titre": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "resume": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "corps": {
+            "type": "string",
+            "maxLength": 1500
+          },
+          "chantier": {
+            "type": "string",
+            "maxLength": 60
+          },
+          "projet": {
+            "type": "string",
+            "enum": [
+              "",
+              "fba",
+              "clients",
+              "ultron",
+              "metro",
+              "arabe",
+              "sport",
+              "autre"
+            ]
+          },
+          "tags": {
+            "type": "array",
+            "maxItems": 5,
+            "items": {
+              "type": "string",
+              "maxLength": 30
+            }
+          },
+          "clair": {
+            "type": "string",
+            "maxLength": 140
+          },
+          "time": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "type",
+          "titre",
+          "resume",
+          "corps",
+          "chantier",
+          "projet",
+          "tags",
+          "clair",
+          "time"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "avis": {
+      "type": "object",
+      "properties": {
+        "credible": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "vente": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "applicable": {
+          "type": "string",
+          "enum": [
+            "",
+            "oui",
+            "en_partie",
+            "non"
+          ]
+        },
+        "pourquoi": {
+          "type": "string",
+          "maxLength": 400
+        }
+      },
+      "required": [
+        "credible",
+        "vente",
+        "applicable",
+        "pourquoi"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "overview",
+    "timeline",
+    "technique",
+    "unreadable",
+    "digest",
+    "cas",
+    "cas_secondaires",
+    "devine",
+    "inspiration",
+    "info",
+    "methode",
+    "donnees",
+    "ecarts",
+    "a_verifier",
+    "avis",
+    "rangement"
+  ],
+  "additionalProperties": false
+}

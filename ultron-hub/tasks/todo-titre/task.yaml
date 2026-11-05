@@ -1,0 +1,6 @@
+name: todo-titre
+description: Generate a short French title for a long todo text.
+model: haiku            # fixed at design time, light task
+tools: []               # no tools at all
+add_dirs: []
+timeout_s: 45

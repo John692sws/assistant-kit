@@ -1,0 +1,12 @@
+[Unit]
+Description=ultron-hub: weekly integrity check of the backup repository (5%% of the data)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/workspace/projects/active/ultron-hub/.venv/bin/ultron-hub backup check
+WorkingDirectory=%h/workspace/projects/active/ultron-hub
+TimeoutStartSec=5h
+Nice=10
+IOSchedulingClass=idle

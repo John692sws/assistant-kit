@@ -1,0 +1,7 @@
+name: video-actions
+description: Propose des actions concrètes (fiche, todo, recherche, fait de profil) à partir de l'analyse d'une vidéo et de la réponse de l'utilisateur, qui peut corriger la devinette (todo #441)
+model: sonnet           # FIXÉ à la conception : lecture d'un compte rendu + d'une consigne courte, pas d'image
+timeout_s: 240
+tools: []               # Claude ne lance rien : il lit l'analyse et le texte de l'utilisateur
+allowed_tools: []
+add_dirs: []

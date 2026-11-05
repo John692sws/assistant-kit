@@ -1,0 +1,91 @@
+{
+  "type": "object",
+  "properties": {
+    "scene": {
+      "type": "object",
+      "properties": {
+        "mot": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "titre",
+            "mot_cle",
+            "phrase",
+            "chiffre",
+            "liste",
+            "emotion",
+            "formes",
+            "image",
+            "icone",
+            "photo",
+            "schema",
+            "comparaison"
+          ]
+        },
+        "texte": {
+          "type": "string",
+          "maxLength": 48
+        },
+        "points": {
+          "type": "array",
+          "maxItems": 4,
+          "items": {
+            "type": "string",
+            "maxLength": 32
+          }
+        },
+        "emotion": {
+          "type": "string",
+          "enum": [
+            "joie",
+            "surprise",
+            "colere",
+            "peur",
+            "tristesse",
+            "fierte",
+            "reflexion",
+            "idee",
+            "aucune"
+          ]
+        },
+        "style": {
+          "type": "string",
+          "enum": [
+            "doux",
+            "fort"
+          ]
+        },
+        "visuel": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "mots": {
+          "type": "array",
+          "maxItems": 4,
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "required": [
+        "mot",
+        "type",
+        "texte",
+        "points",
+        "emotion",
+        "style",
+        "visuel",
+        "mots"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "scene"
+  ],
+  "additionalProperties": false
+}

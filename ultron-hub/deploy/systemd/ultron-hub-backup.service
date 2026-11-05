@@ -1,0 +1,12 @@
+[Unit]
+Description=ultron-hub: encrypted backup to Google Drive (restic + rclone)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/workspace/projects/active/ultron-hub/.venv/bin/ultron-hub backup run
+WorkingDirectory=%h/workspace/projects/active/ultron-hub
+TimeoutStartSec=5h
+Nice=10
+IOSchedulingClass=idle

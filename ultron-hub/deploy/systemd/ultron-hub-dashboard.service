@@ -1,0 +1,25 @@
+# Dashboard du téléphone (todos #130, #131) : écoute seulement sur l'IP Tailscale, appareils de config/dashboard.yaml
+# seulement. Actions confirmées (⏹/▶️ escouade) : il lit close.key au moment de signer ▶️, comme le plugin Telegram.
+[Unit]
+Description=ultron-hub: dashboard du téléphone (lecture seule, Tailscale)
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory={{HOME}}/workspace/projects/active/ultron-hub
+Environment=PATH={{HOME}}/.local/bin:/usr/bin:/bin
+Environment=LANG=C.UTF-8
+Environment=PYTHONUNBUFFERED=1
+ExecStart={{HOME}}/workspace/projects/active/ultron-hub/.venv/bin/ultron-hub dashboard serve --port 8787
+Restart=on-failure
+RestartSec=10
+# 78 = configuration absente (pas d'IP Tailscale, liste d'appareils illisible) : pas de relance en boucle.
+RestartPreventExitStatus=78
+KillSignal=SIGTERM
+TimeoutStopSec=15
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

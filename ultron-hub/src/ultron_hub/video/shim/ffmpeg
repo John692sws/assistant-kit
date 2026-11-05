@@ -1,0 +1,33 @@
+#!/usr/bin/python3
+"""ffmpeg relay for the external hermes-video skill (todo #476): yt-dlp may only offer limited-range ("tv") yuv420p,
+which ffmpeg refuses to encode as JPEG. When the output is a .jpg/.jpeg and no -pix_fmt is given, add
+`-pix_fmt yuvj420p` just before it; anything else passes unchanged. Then exec the real ffmpeg (never this file)."""
+import os
+import shutil
+import sys
+
+
+def adjust(args):
+    if args and args[-1].lower().endswith((".jpg", ".jpeg")) and "-pix_fmt" not in args:
+        return args[:-1] + ["-pix_fmt", "yuvj420p", args[-1]]
+    return args
+
+
+def real_ffmpeg(path, me):
+    for d in path.split(os.pathsep):
+        cand = os.path.join(d, "ffmpeg")
+        if d and os.path.isabs(d) and os.access(cand, os.X_OK) and os.path.realpath(cand) != me:
+            return cand
+    return None
+
+
+def main():
+    me = os.path.realpath(__file__)
+    real = real_ffmpeg(os.environ.get("PATH", ""), me) or shutil.which("ffmpeg", path="/usr/bin:/bin:/usr/local/bin")
+    if not real or os.path.realpath(real) == me:
+        sys.exit("ffmpeg relay: real ffmpeg not found")
+    os.execv(real, ["ffmpeg"] + adjust(sys.argv[1:]))
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,7 @@
+[Unit]
+Description={{NOM_ASSISTANT}}: collect health metrics periodically
+
+[Service]
+Type=oneshot
+ExecStart={{HOME}}/workspace/projects/active/ultron-hub/.venv/bin/ultron-hub health collect --record
+WorkingDirectory={{HOME}}/workspace/projects/active/ultron-hub

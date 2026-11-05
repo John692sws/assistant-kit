@@ -1,0 +1,8 @@
+name: menage-resume
+description: Résumé hebdomadaire du ménage du serveur (anomalies trouvées par script, mises en mots par Claude)
+model: haiku            # FIXÉ à la conception : reformuler une liste courte, pas de raisonnement lourd
+timeout_s: 90
+# Pas de collecteur : `menage report` passe dans {metrics} les anomalies déjà trouvées par le scan (≤ 3 Ko).
+tools: []               # Claude ne lance rien : il lit seulement les anomalies
+allowed_tools: []
+add_dirs: []

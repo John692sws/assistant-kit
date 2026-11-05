@@ -1,0 +1,8 @@
+name: video-analyse-lot
+description: Lots d'images d'une vidéo en chronologie (todo #470) ; même prompt et même schéma que video-analyse (liens), la synthèse reste en opus
+model: sonnet           # FIXÉ à la conception : un lot d'images décrit des faits, opus est gardé pour la synthèse (0,5 $ par lot en opus, 29/10)
+timeout_s: 900          # un lot de 20 images ; le script enchaîne les lots (voir video/analyse.py)
+tools: [Read]           # lecture des images seulement
+allowed_tools: []       # la règle Read(//<dossier des images>/**) est ajoutée à l'exécution (registry.scope_reads)
+add_dirs: []            # idem : run_job(read_dir=…)
+max_budget_usd: 2

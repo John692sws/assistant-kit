@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "properties": {
+    "reponse": {"type": "string", "maxLength": 400},
+    "actions": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {"type": "string", "enum": ["fiche", "todo", "recherche", "profil"]},
+          "titre": {"type": "string", "maxLength": 120},
+          "resume": {"type": "string", "maxLength": 200},
+          "corps": {"type": "string", "maxLength": 1500},
+          "projet": {"type": "string", "enum": ["", "fba", "clients", "ultron", "metro", "arabe", "sport", "autre"]},
+          "tags": {"type": "array", "maxItems": 5, "items": {"type": "string", "maxLength": 30}},
+          "clair": {"type": "string", "maxLength": 140}
+        },
+        "required": ["type", "titre", "resume", "corps", "projet", "tags", "clair"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["reponse", "actions"],
+  "additionalProperties": false
+}

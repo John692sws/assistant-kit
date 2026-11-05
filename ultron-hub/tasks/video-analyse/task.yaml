@@ -1,0 +1,9 @@
+name: video-analyse
+description: Analyse d'une vidéo (images lues par lots, transcription, mesures du son) en chronologie horodatée, puis grille selon l'intention devinée (todo #441)
+model: opus             # FIXÉ à la conception : lecture fine d'images et de texte, rien ne doit échapper
+timeout_s: 900          # un lot de 20 images ; le script enchaîne les lots (voir video/analyse.py)
+tools: [Read]           # lecture des images seulement
+allowed_tools: []       # la règle Read(//<dossier des images>/**) est ajoutée à l'exécution (registry.scope_reads) :
+                        # sans elle, rien n'est lisible
+add_dirs: []            # idem : le dossier absolu var/video/<id>/images est ajouté par run_job(read_dir=…)
+max_budget_usd: 5

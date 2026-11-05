@@ -1,0 +1,67 @@
+# Allowlist for `ultron-hub kit export`. Globs use fnmatch on the repo-relative path ('*' also crosses '/').
+# A file matching "exclude" is dropped; else a file matching "include" is copied; else it is reported as unclassified.
+include:
+  - README.md
+  - CLAUDE.md
+  - pyproject.toml
+  - .gitignore
+  - .env.example
+  - src/*
+  - tests/*
+  - tasks/*
+  - docs/*
+  - deploy/bin/*
+  - deploy/systemd/*
+  - config/kit.yaml
+  - scripts/install-systemd.sh
+exclude:
+  - var/*
+  - hermes_plugin/*
+  - hermes_skill/*
+  - deploy/priv/*
+  - montage/*
+  - config/dashboard.yaml
+  - config/groupe.yaml
+  - ETAT.md
+  - status-hub.md
+  - requests-summary.md
+  # Replaced by a template in kit/gabarits, or personal / tied to Hermes, Telegram or the bot switch-over.
+  - kit/*
+  - tests/test_kit_remplir.py
+  - tests/test_kit_setup.py
+  - tests/test_kit_blanc.py
+  # Tests of files that are not exported (read at import time, so they cannot even be collected in the kit).
+  - tests/test_dashboard_apercu.py
+  - tests/test_escouade_socle.py
+  - tests/test_montage.py
+  - tests/test_git_hook_commit.py
+  - tests/test_plateforme.py
+  - tests/test_bascule.py
+  - tests/test_plan_check.py
+  - tests/test_prompt_essai.py
+  - tests/test_menage_config.py
+  - tests/test_privileged.py
+  - tests/test_depot_push.py
+  - deploy/user/*
+  # Workflow of the original install (todo-<id>/ branches, « (todo #<id>) » tag read by the merge): not needed by a new
+  # install, and `git config core.hooksPath` would hook the user's own commits.
+  - deploy/git-hooks/*
+  - deploy/hooks/*
+  - tests/test_garde.py
+  - deploy/prompt/*
+  - deploy/escouade/*
+  - deploy/esprit/*
+  - deploy/navigateur/*
+  - deploy/veilles/*
+  - deploy/systemd/ultron-bot.service
+  - config/contexte.yaml
+  - config/menage.yaml
+  - config/prompt-essais.yaml
+  - config/sante.yaml
+  - config/settings.yaml
+  - scripts/*
+
+# Literal strings (never the bare word "ultron") replaced in the copied text files, longest first, before the scan.
+remplacer:
+  {{HOME}}: "{{HOME}}"
+  {{MACHINE}}: "{{MACHINE}}"

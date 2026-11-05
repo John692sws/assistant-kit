@@ -1,0 +1,8 @@
+[Unit]
+Description=ultron-hub: ping healthchecks.io (server alive, last health collect fresh)
+
+[Service]
+Type=oneshot
+ExecStart=%h/workspace/projects/active/ultron-hub/.venv/bin/ultron-hub heartbeat
+WorkingDirectory=%h/workspace/projects/active/ultron-hub
+TimeoutStartSec=60

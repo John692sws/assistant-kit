@@ -1,0 +1,8 @@
+name: docs-presenter
+description: Analyse neutre de 1 à 3 éléments (fichiers, liens, textes, audios) extraits par script
+model: sonnet           # FIXÉ à la conception : analyse d'un texte déjà extrait
+timeout_s: 240           # la transcription audio est faite avant, par le collecteur (hors de ce délai)
+collect: docs           # core/collectors.py : lit var/docs/<id>, extrait le texte, remplit {metrics}
+tools: []               # Claude ne lance rien : il lit le texte du prompt et le résume
+allowed_tools: []
+add_dirs: []

@@ -1,0 +1,6 @@
+name: todo-clair
+description: Write the one-sentence French "En clair" line that says what a todo is for.
+model: haiku            # fixed at design time, light task
+tools: []               # no tools at all
+add_dirs: []
+timeout_s: 25

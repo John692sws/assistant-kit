@@ -1,0 +1,14 @@
+# todo #239 : récupère/renouvelle le certificat HTTPS du dashboard (tailscale cert, sans sudo : opérateur = ultron),
+# rangé dans ~/.local/state/ultron-hub/dashboard-tls/ (0600), puis redémarre le dashboard SEULEMENT s'il a changé.
+[Unit]
+Description=ultron-hub: certificat HTTPS du dashboard (tailscale cert), redémarrage du dashboard s'il change
+Wants=network-online.target
+After=network-online.target tailscaled.service
+
+[Service]
+Type=oneshot
+ExecStart=%h/workspace/projects/active/ultron-hub/.venv/bin/ultron-hub dashboard cert --redemarrer
+WorkingDirectory=%h/workspace/projects/active/ultron-hub
+Environment=PATH={{HOME}}/.local/bin:/usr/bin:/bin
+Environment=LANG=C.UTF-8
+TimeoutStartSec=5min

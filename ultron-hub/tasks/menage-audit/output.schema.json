@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "properties": {
+    "summary": {"type": "string", "maxLength": 300},
+    "proposals": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "properties": {
+          "section": {"type": "string"},
+          "changement": {"type": "string", "maxLength": 200},
+          "raison": {"type": "string", "maxLength": 200},
+          "yaml": {"type": "string", "maxLength": 600}
+        },
+        "required": ["section", "changement", "raison", "yaml"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["summary", "proposals"],
+  "additionalProperties": false
+}

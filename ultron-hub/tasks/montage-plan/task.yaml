@@ -1,0 +1,8 @@
+name: montage-plan
+description: Plan d'animation d'une note vocale (mots horodatés collectés par script, scènes choisies par Claude dans un catalogue fermé)
+model: sonnet           # FIXÉ à la conception : choix des moments forts d'un texte court
+timeout_s: 180
+collect: montage        # core/collectors.py : relit var/montage/<id>/words.json, remplit {metrics}
+tools: []               # Claude ne lance rien et n'écrit aucun code : il remplit un plan
+allowed_tools: []
+add_dirs: []

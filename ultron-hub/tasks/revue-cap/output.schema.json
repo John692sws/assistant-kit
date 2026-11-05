@@ -1,0 +1,39 @@
+{
+  "type": "object",
+  "properties": {
+    "summary": {"type": "string", "maxLength": 300},
+    "chantiers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nom": {"type": "string"},
+          "verdict": {"type": "string", "enum": ["vert", "orange", "rouge"]},
+          "objectif": {"type": "string", "maxLength": 300},
+          "technique": {"type": "string", "maxLength": 300},
+          "derives": {"type": "string", "maxLength": 300},
+          "preuves": {"type": "array", "minItems": 1, "maxItems": 5, "items": {"type": "string", "maxLength": 200}}
+        },
+        "required": ["nom", "verdict", "objectif", "technique", "derives", "preuves"],
+        "additionalProperties": false
+      }
+    },
+    "corrections": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "properties": {
+          "titre": {"type": "string", "maxLength": 40},
+          "chantier": {"type": "string"},
+          "notes": {"type": "string", "maxLength": 800},
+          "preuve": {"type": "string", "maxLength": 200}
+        },
+        "required": ["titre", "chantier", "notes", "preuve"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["summary", "chantiers", "corrections"],
+  "additionalProperties": false
+}

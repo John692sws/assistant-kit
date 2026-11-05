@@ -1,0 +1,7 @@
+[Unit]
+Description={{NOM_ASSISTANT}}: nightly encrypted backup
+
+[Service]
+Type=oneshot
+ExecStart={{HOME}}/workspace/projects/active/ultron-hub/.venv/bin/ultron-hub backup run
+WorkingDirectory={{HOME}}/workspace/projects/active/ultron-hub

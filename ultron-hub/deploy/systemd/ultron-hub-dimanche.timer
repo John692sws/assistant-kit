@@ -1,0 +1,9 @@
+[Unit]
+Description=Sunday reports (tidy-up, cap review, week count, focus question), Sunday 10:00 (caught up after sleep or shutdown)
+
+[Timer]
+OnCalendar=Sun *-*-* 10:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

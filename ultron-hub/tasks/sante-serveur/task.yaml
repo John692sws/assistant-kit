@@ -1,0 +1,8 @@
+name: sante-serveur
+description: Bilan de santé du serveur (métriques collectées par script, analysées par Claude)
+model: haiku            # FIXÉ à la conception : lecture de métriques, pas de raisonnement lourd
+timeout_s: 90
+collect: health         # core/collectors.py : remplit {metrics} avant l'appel à Claude
+tools: []               # Claude ne lance rien : il lit seulement les métriques
+allowed_tools: []
+add_dirs: []

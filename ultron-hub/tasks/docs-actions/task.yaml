@@ -1,0 +1,7 @@
+name: docs-actions
+description: Propose des actions concrètes (fiche, todo, recherche, fait de profil) à partir de l'analyse neutre de documents et de la réponse de l'utilisateur
+model: sonnet           # FIXÉ à la conception : lecture d'une analyse + du texte des documents + d'une consigne courte
+timeout_s: 240
+tools: []               # Claude ne lance rien : il lit l'analyse, les documents et le texte de l'utilisateur
+allowed_tools: []
+add_dirs: []

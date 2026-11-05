@@ -1,0 +1,10 @@
+[Unit]
+Description=Weekly renewal of the dashboard HTTPS certificate, Monday 04:30
+
+[Timer]
+OnCalendar=Mon *-*-* 04:30:00
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

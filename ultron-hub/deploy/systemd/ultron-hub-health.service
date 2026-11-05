@@ -1,0 +1,10 @@
+[Unit]
+Description=ultron-hub: collect health metrics periodically
+
+[Service]
+Type=oneshot
+ExecStart=%h/workspace/projects/active/ultron-hub/.venv/bin/ultron-hub health collect --record
+# Après la collecte : alertes sur changement d'état seulement (todo #160). Le « - » : un échec ici ne doit pas
+# faire passer l'unité en échec (elle s'alerterait elle-même).
+ExecStartPost=-%h/workspace/projects/active/ultron-hub/.venv/bin/ultron-hub health alertes
+WorkingDirectory=%h/workspace/projects/active/ultron-hub

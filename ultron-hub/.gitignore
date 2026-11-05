@@ -1,0 +1,16 @@
+var/
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.env
+*.log
+# reports once dropped at the root by sessions (no code generates them)
+/status-hub.md
+/requests-summary.md
+# montage (todo #73): npm dependencies and Remotion's browser, installed by the action after merge montage_install
+node_modules/
+
+# Groupe Telegram propre à ce serveur, écrit par /groupe (todo #214)
+config/groupe.yaml

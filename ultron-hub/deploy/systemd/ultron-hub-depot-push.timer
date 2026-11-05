@@ -1,0 +1,10 @@
+[Unit]
+Description=Push quotidien d'ultron-hub vers le GitHub privé
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target
